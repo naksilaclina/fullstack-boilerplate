@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { NavbarButton } from "@/components/ui/resizable-navbar";
 
 export default function Hero() {
   const router = useRouter();
@@ -32,34 +33,36 @@ export default function Hero() {
       </p>
       {!isAuthenticated && (
         <div className="flex justify-center gap-4">
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            onClick={() => router.push("/login")}
+          <NavbarButton 
+            href="/login" 
+            variant="secondary"
           >
             Login
-          </button>
-          <button 
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-            onClick={() => router.push("/register")}
+          </NavbarButton>
+          <NavbarButton 
+            href="/register" 
+            variant="primary"
+            className="!bg-black !text-white"
           >
             Register
-          </button>
+          </NavbarButton>
         </div>
       )}
       {isAuthenticated && (
         <div className="flex justify-center gap-4">
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            onClick={() => router.push("/dashboard")}
+          <NavbarButton 
+            href="/dashboard" 
+            variant="secondary"
           >
             Go to Dashboard
-          </button>
-          <button 
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-            onClick={() => router.push("/user")}
+          </NavbarButton>
+          <NavbarButton 
+            href="/user" 
+            variant="primary"
+            className="!bg-black !text-white"
           >
             Go to User Page
-          </button>
+          </NavbarButton>
         </div>
       )}
     </div>
