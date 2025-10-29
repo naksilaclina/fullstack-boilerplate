@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
 import { refreshAccessToken } from "@/services/authService";
 import { toastService } from "@/services/toastService";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, accessToken, logout, setAccessToken } = useAuthStore();
+  const { isAuthenticated, accessToken, logout, setAccessToken } = useAuth();
 
   useEffect(() => {
     const checkAuth = async () => {

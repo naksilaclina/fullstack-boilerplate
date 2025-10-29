@@ -2,12 +2,12 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import RoleProtectedRoute from "@/components/RoleProtectedRoute";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function UserPanel() {
-  const { user } = useAuthStore();
+  const { user } = useAuth();
 
   return (
     <RoleProtectedRoute allowedRoles={["user", "admin"]}>

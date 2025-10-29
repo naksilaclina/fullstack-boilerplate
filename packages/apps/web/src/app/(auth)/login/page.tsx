@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
 import { login as loginService, getProfile } from "@/services/authService";
 import { toastService } from "@/services/toastService";
 
@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [isDevelopment, setIsDevelopment] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuthStore();
+  const { login } = useAuth();
   
   // Use a ref to prevent multiple simultaneous submissions
   const isSubmitting = useRef(false);

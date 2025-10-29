@@ -11,13 +11,13 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { useState } from "react";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
 import LogoutButton from "@/components/LogoutButton";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { useTheme } from "next-themes";
 
 export default function Header() {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user } = useAuth();
   const { theme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   

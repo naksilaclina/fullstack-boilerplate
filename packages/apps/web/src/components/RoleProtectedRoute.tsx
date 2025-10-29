@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
 import { refreshAccessToken } from "@/services/authService";
 import { toastService } from "@/services/toastService";
 
@@ -16,7 +16,7 @@ export default function RoleProtectedRoute({
   allowedRoles 
 }: RoleProtectedRouteProps) {
   const router = useRouter();
-  const { isAuthenticated, user, accessToken, logout, setAccessToken } = useAuthStore();
+  const { isAuthenticated, user, accessToken, logout, setAccessToken } = useAuth();
 
   useEffect(() => {
     const checkAuth = async () => {

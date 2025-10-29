@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { NavbarButton } from "@/components/ui/resizable-navbar";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
 import { logout as logoutService } from "@/services/authService";
 import { toastService } from "@/services/toastService";
 
 export default function LogoutButton() {
   const router = useRouter();
-  const { logout, isAuthenticated } = useAuthStore(); // Get authentication state
+  const { logout, isAuthenticated } = useAuth();
 
   const handleLogout = async () => {
     try {

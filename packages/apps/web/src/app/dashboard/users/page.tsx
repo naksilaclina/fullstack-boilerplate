@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
 import { toastService } from "@/services/toastService";
 import { getUsers, createUser, updateUser, deleteUser } from "@/services/userService";
 import RoleProtectedRoute from "@/components/RoleProtectedRoute";
@@ -20,7 +20,7 @@ interface User {
 }
 
 export default function AdminUsers() {
-  const { user: currentUser, accessToken } = useAuthStore();
+  const { user: currentUser, accessToken } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
