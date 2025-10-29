@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { NavbarButton } from "@/components/ui/resizable-navbar";
+import { UserRole } from "@/lib/roles";
 
 export default function Hero() {
   const router = useRouter();
@@ -22,6 +23,14 @@ export default function Hero() {
       </div>
     );
   }
+
+  // Determine where to redirect authenticated users
+  const getUserDashboardLink = () => {
+    if (!isAuthenticated) return "/";
+    if (user?.role === UserRole.ADMIN) return "/dashboard";
+    if (user?.role === UserRole.USER) return "/user";
+    return "/";
+  };
 
   return (
     <div className="py-24">
@@ -51,17 +60,10 @@ export default function Hero() {
       {isAuthenticated && (
         <div className="flex justify-center gap-4">
           <NavbarButton 
-            href="/dashboard" 
+            href={getUserDashboardLink()} 
             variant="secondary"
           >
-            Go to Dashboard
-          </NavbarButton>
-          <NavbarButton 
-            href="/user" 
-            variant="primary"
-            className="!bg-black !text-white"
-          >
-            Go to User Page
+            Go to My Dashboard
           </NavbarButton>
         </div>
       )}
