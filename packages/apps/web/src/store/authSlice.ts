@@ -1,4 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { getProfile } from '@/services/authService';
 
 export interface User {
   id: string;
@@ -9,32 +10,79 @@ export interface User {
 }
 
 interface AuthState {
-  user: Omit<User, 'email'> | null;
+  user: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
+  error: string | null;
 }
 
 const initialState: AuthState = {
   user: null,
-  isAuthenticated: false
+  isAuthenticated: false,
+  loading: false,
+  error: null
 };
+
+// Async thunk to check auth status with backend
+export const checkAuthStatus = createAsyncThunk(
+  'auth/checkStatus',
+  async (_, { rejectWithValue }) => {
+    try {
+      const profile = await getProfile();
+      return profile;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to check auth status');
+    }
+  }
+);
 
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<{ user: Omit<User, 'email'> | null }>) => {
+    setUser: (state, action: PayloadAction<{ user: User }>) => {
       state.user = action.payload.user;
-      state.isAuthenticated = !!action.payload.user;
+      state.isAuthenticated = true;
+      state.loading = false;
+      state.error = null;
     },
     clearUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
+      state.loading = false;
+      state.error = null;
     },
-    // Initialize auth state (no longer uses localStorage)
+    // Initialize auth state by checking with the backend
     initAuthState: (state) => {
-      // Auth state will be initialized by checking with the backend
-      // This is a no-op now since we're using cookies
+      // This will trigger the async thunk to check auth status
+      state.loading = true;
+      state.error = null;
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(checkAuthStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(checkAuthStatus.fulfilled, (state, action) => {
+        state.user = {
+          id: action.payload.id,
+          firstName: action.payload.firstName,
+          lastName: action.payload.lastName,
+          email: action.payload.email,
+          role: action.payload.role
+        };
+        state.isAuthenticated = true;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(checkAuthStatus.rejected, (state, action) => {
+        state.user = null;
+        state.isAuthenticated = false;
+        state.loading = false;
+        state.error = action.payload as string || 'Failed to check auth status';
+      });
   },
 });
 

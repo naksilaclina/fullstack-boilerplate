@@ -5,6 +5,7 @@ import { NavbarButton } from "@/components/ui/resizable-navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { logout as logoutService } from "@/services/authService";
 import { toastService } from "@/services/toastService";
+import { getPostLogoutRedirectPath } from "@/lib/redirectUtils";
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function LogoutButton() {
         message: "Logout Successful",
         description: "You have been successfully logged out.",
       });
-      router.push("/login");
+      router.push(getPostLogoutRedirectPath());
     } catch (error: any) {
       // Even if the API call fails, we still log out the user locally
       logout();
@@ -26,7 +27,7 @@ export default function LogoutButton() {
         message: "Logged Out",
         description: "You have been logged out (local only).",
       });
-      router.push("/login");
+      router.push(getPostLogoutRedirectPath());
     }
   };
 

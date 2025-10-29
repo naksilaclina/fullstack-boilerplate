@@ -253,4 +253,13 @@
   .toast-custom[data-sonner-toast][data-type="info"] {
     @apply bg-info text-info-foreground border-info;
   }
+  
+  /* Global loader styles */
+  .global-loader {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-background;
+  }
+  
+  .global-loader.fade-out {
+    @apply opacity-0 pointer-events-none transition-opacity duration-500;
+  }
 }

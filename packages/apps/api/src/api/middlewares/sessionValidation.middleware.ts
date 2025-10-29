@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken, JwtPayload } from "~api/services/auth/jwt.utils";
 import { SessionModel } from "@naksilaclina/mongodb";
+import { JwtPayload, verifyAccessToken } from "~api/services/auth/jwt.utils";
 
 declare global {
   namespace Express {
@@ -12,10 +12,11 @@ declare global {
 }
 
 /**
- * Authentication middleware to protect routes
+ * Session validation middleware to check if the session is still valid in the database
  */
-export async function authenticate(req: Request, res: Response, next: NextFunction) {
+export async function validateSession(req: Request, res: Response, next: NextFunction) {
   try {
+    // Get the access token to extract session information
     let token: string | undefined;
     
     // First, check for token in Authorization header
@@ -65,7 +66,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     next();
   } catch (error) {
     return res.status(500).json({ 
-      error: "Internal server error during authentication." 
+      error: "Internal server error during session validation." 
     });
   }
 }

@@ -4,7 +4,8 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Header from "@/components/Header";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { ReduxProvider } from "@/components/ReduxProvider"; // Added Redux provider
+import { ReduxProvider } from "@/components/ReduxProvider";
+import GlobalLoader from "@/components/GlobalLoader"; // Added GlobalLoader
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,18 +83,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
-        <ReduxProvider> {/* Wrapped with Redux provider */}
+        <ReduxProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
           >
-            <Header />
-            <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6">
-              {children}
-            </main>
-            <Toaster />
+            <GlobalLoader> {/* Wrapped with GlobalLoader */}
+              <Header />
+              <main className="mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6">
+                {children}
+              </main>
+              <Toaster />
+            </GlobalLoader>
           </ThemeProvider>
         </ReduxProvider>
       </body>

@@ -5,12 +5,13 @@ import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { UserRole } from "@/lib/roles";
 
 export default function UserPanel() {
   const { user } = useAuth();
 
   return (
-    <RoleProtectedRoute allowedRoles={["user", "admin"]}>
+    <RoleProtectedRoute allowedRoles={[UserRole.USER, UserRole.ADMIN]}>
       <div className="py-16 md:py-24">
         <div className="flex flex-col items-center gap-6 text-center mb-8">
           <h1 className="text-3xl font-semibold tracking-tight">

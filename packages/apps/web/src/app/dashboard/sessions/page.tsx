@@ -102,7 +102,7 @@ export default function SessionsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="mx-auto py-8">
       <Card>
         <CardHeader>
           <CardTitle>Active Sessions</CardTitle>

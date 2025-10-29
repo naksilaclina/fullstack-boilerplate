@@ -1,67 +1,99 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { getProfile } from "@/services/authService";
 import { toastService } from "@/services/toastService";
+import { authorizationService } from "@/services/authorizationService";
+import { UserRole } from "@/lib/roles";
+import type { User } from "@/store/authSlice";
+import { useAppDispatch } from "@/store";
+import { checkAuthStatus } from "@/store/authSlice";
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: UserRole[];
+}
+
+export default function ProtectedRoute({ 
+  children, 
+  allowedRoles 
+}: ProtectedRouteProps) {
   const router = useRouter();
-  const { user, isAuthenticated, login, logout } = useAuth();
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const dispatch = useAppDispatch();
+  const { user, isAuthenticated } = useAuth();
+  // We're not using isCheckingAuth anymore since we're using the loading state from Redux
 
   useEffect(() => {
     console.log('ProtectedRoute checkAuth called with state:', {
       user,
-      isAuthenticated
+      isAuthenticated,
+      allowedRoles
     });
     
     const checkAuth = async () => {
-      // If user is not authenticated, try to get profile from server
+      // If user is not authenticated, try to check auth status with server
       if (!isAuthenticated) {
-        console.log('User not authenticated, trying to get profile');
+        console.log('User not authenticated, checking auth status with server');
         try {
-          const profile = await getProfile();
-          login({
-            id: profile.id,
-            firstName: profile.firstName,
-            lastName: profile.lastName,
-            role: profile.role
-          });
+          const result = await dispatch(checkAuthStatus());
+          if (checkAuthStatus.fulfilled.match(result)) {
+            // User is authenticated, no need to do anything else
+            console.log('User is authenticated');
+          } else if (checkAuthStatus.rejected.match(result)) {
+            // If checking auth status fails, redirect to login
+            console.log('Failed to check auth status, redirecting to login');
+            toastService.error({
+              message: "Authentication Required",
+              description: "Please log in to access this page.",
+            });
+            router.push("/login");
+            return;
+          }
         } catch (error) {
-          // If getting profile fails, redirect to login
-          console.log('Failed to get profile, redirecting to login');
+          // If checking auth status fails, redirect to login
+          console.log('Failed to check auth status, redirecting to login');
           toastService.error({
             message: "Authentication Required",
             description: "Please log in to access this page.",
           });
           router.push("/login");
-          setIsCheckingAuth(false);
           return;
         }
       }
       
-      setIsCheckingAuth(false);
+      // If roles are specified, check if user has the required role
+      if (allowedRoles && user && !authorizationService.isRouteAccessible(user as User, allowedRoles)) {
+        toastService.error({
+          message: "Access Denied",
+          description: `You don't have permission to access this page. Your role is ${user.role}.`,
+        });
+        
+        // Redirect to user's default page
+        const redirectPath = authorizationService.getAccessDeniedRedirectPath(user as User);
+        router.push(redirectPath);
+        return;
+      }
     };
 
     checkAuth();
-  }, [isAuthenticated, login, logout, router, user]);
-
-  // If we're still checking auth, don't render anything
-  if (isCheckingAuth) {
-    return <div>Loading...</div>;
-  }
+  }, [isAuthenticated, dispatch, router, user, allowedRoles]);
 
   // If user is not authenticated, don't render children
   console.log('ProtectedRoute rendering with state:', {
     user,
     isAuthenticated,
-    shouldRender: isAuthenticated
+    allowedRoles,
+    shouldRender: isAuthenticated && (!allowedRoles || (user && authorizationService.isRouteAccessible(user as User, allowedRoles)))
   });
   
   if (!isAuthenticated) {
-    return null;
+    return <div>Loading...</div>;
+  }
+
+  // If roles are specified, check if user has the required role
+  if (allowedRoles && !authorizationService.isRouteAccessible(user as User, allowedRoles)) {
+    return <div>Loading...</div>;
   }
 
   return <>{children}</>;

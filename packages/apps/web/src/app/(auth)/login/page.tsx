@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from "@/hooks/useAuth";
 import { login as loginService, getProfile } from "@/services/authService";
 import { toastService } from "@/services/toastService";
+import { authorizationService } from "@/services/authorizationService";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -17,10 +18,19 @@ export default function LoginPage() {
   const [isDevelopment, setIsDevelopment] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   
   // Use a ref to prevent multiple simultaneous submissions
   const isSubmitting = useRef(false);
+
+  // Redirect authenticated users to their default page
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Use our authorization service to determine redirect path
+      const redirectPath = authorizationService.getPostLoginRedirectPath(user);
+      router.push(redirectPath);
+    }
+  }, [isAuthenticated, user, router]);
 
   useEffect(() => {
     // Check if we're in development mode
@@ -53,42 +63,39 @@ export default function LoginPage() {
     if (!email || !password) {
       toastService.error({
         message: "Login Failed",
-        description: "Please provide both email and password.",
+        description: "Please provide both email and password."
       });
       return;
     }
     
     isSubmitting.current = true;
     setIsLoading(true);
-
+    
     try {
       const response = await loginService({ email, password });
       // Get full user profile
       const userProfile = await getProfile();
-      // Omit email from user data stored in Redux
-      const { email: omittedEmail, ...userWithoutEmail } = userProfile;
-      login(userWithoutEmail);
+      login(userProfile);
+      
       toastService.success({
         message: "Login Successful",
-        description: "Welcome back! You have been successfully logged in.",
+        description: "Welcome back! You have been successfully logged in."
       });
       
-      // Redirect based on user role
-      if (userProfile.role === "admin") {
-        // Check if there's a redirect URL in the search params
-        const redirectUrl = searchParams.get("redirect");
-        if (redirectUrl) {
-          router.push(redirectUrl);
-        } else {
-          router.push("/dashboard");
-        }
+      // Use our authorization service to determine redirect path
+      const redirectPath = authorizationService.getPostLoginRedirectPath(userProfile);
+      
+      // Check if there's a redirect URL in the search params
+      const redirectUrl = searchParams.get("redirect");
+      if (redirectUrl) {
+        router.push(redirectUrl);
       } else {
-        router.push("/user");
+        router.push(redirectPath);
       }
     } catch (error: any) {
       toastService.error({
         message: "Login Failed",
-        description: error.message || "Failed to login. Please check your credentials and try again.",
+        description: error.message || "Failed to login. Please check your credentials and try again."
       });
     } finally {
       isSubmitting.current = false;
@@ -107,46 +114,43 @@ export default function LoginPage() {
     if (!email || !password) {
       toastService.error({
         message: "Login Failed",
-        description: "Please provide both email and password.",
+        description: "Please provide both email and password."
       });
       return;
     }
     
     isSubmitting.current = true;
     setIsLoading(true);
-
+    
     try {
       const response = await loginService({ email, password });
       // Get full user profile
       const userProfile = await getProfile();
-      // Omit email from user data stored in Redux
-      const { email: omittedEmail, ...userWithoutEmail } = userProfile;
-      login(userWithoutEmail);
+      login(userProfile);
+      
       toastService.success({
         message: "Login Successful",
-        description: "Welcome back! You have been successfully logged in.",
+        description: "Welcome back! You have been successfully logged in."
       });
       
       // Reset form fields after successful login
       setEmail("");
       setPassword("");
       
-      // Redirect based on user role
-      if (userProfile.role === "admin") {
-        // Check if there's a redirect URL in the search params
-        const redirectUrl = searchParams.get("redirect");
-        if (redirectUrl) {
-          router.push(redirectUrl);
-        } else {
-          router.push("/dashboard");
-        }
+      // Use our authorization service to determine redirect path
+      const redirectPath = authorizationService.getPostLoginRedirectPath(userProfile);
+      
+      // Check if there's a redirect URL in the search params
+      const redirectUrl = searchParams.get("redirect");
+      if (redirectUrl) {
+        router.push(redirectUrl);
       } else {
-        router.push("/user");
+        router.push(redirectPath);
       }
     } catch (error: any) {
       toastService.error({
         message: "Login Failed",
-        description: error.message || "Failed to login. Please check your credentials and try again.",
+        description: error.message || "Failed to login. Please check your credentials and try again."
       });
     } finally {
       isSubmitting.current = false;
@@ -204,18 +208,17 @@ export default function LoginPage() {
                       </span>
                     </div>
                   </div>
-                  
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="flex-1"
                       onClick={() => handleQuickLogin("naksilaclina@gmail.com", "test123")}
                       disabled={isLoading}
                     >
                       Test User
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="flex-1"
                       onClick={() => handleQuickLogin("admin@example.com", "admin123")}
                       disabled={isLoading}

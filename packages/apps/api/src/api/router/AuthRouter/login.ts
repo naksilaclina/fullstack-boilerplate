@@ -120,7 +120,7 @@ router.post(
       });
       
       await session.save();
-      devLog("Session created", { sessionId, userId: user._id, clientIP });
+      devLog("Session created", { sessionId, userId: user._id, clientIP, expiresAt: session.expiresAt });
 
       // Set refresh token in HTTP-only cookie
       devLog("Setting refresh token cookie", { email, userId: user._id });

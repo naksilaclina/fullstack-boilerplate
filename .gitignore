@@ -9,6 +9,7 @@ npm-debug.*
 *.key
 *.mobileprovision
 *.orig.*
+
 web-build/
 .env*
 .terraform/
@@ -22,7 +23,5 @@ web-build/
 
 /.idea/
 
-# Development seed accounts
-DEVELOPMENT_SEED_ACCOUNTS.json
-
-prompt.md
+# Markdown files
+*.md
