@@ -33,13 +33,10 @@ interface UserServiceResponse<T> {
 /**
  * Get all users
  */
-export async function getUsers(accessToken: string): Promise<UserServiceResponse<User[]>> {
+export async function getUsers(): Promise<UserServiceResponse<User[]>> {
   const response = await fetch(`${API_BASE_URL}/dashboard/users`, {
     method: "GET",
-    headers: {
-      "Authorization": `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
+    credentials: "include", // Include cookies in the request
   });
 
   if (!response.ok) {
@@ -61,13 +58,10 @@ export async function getUsers(accessToken: string): Promise<UserServiceResponse
 /**
  * Get a specific user by ID
  */
-export async function getUser(id: string, accessToken: string): Promise<UserServiceResponse<User>> {
+export async function getUser(id: string): Promise<UserServiceResponse<User>> {
   const response = await fetch(`${API_BASE_URL}/dashboard/users/${id}`, {
     method: "GET",
-    headers: {
-      "Authorization": `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
+    credentials: "include", // Include cookies in the request
   });
 
   if (!response.ok) {
@@ -91,13 +85,13 @@ export async function getUser(id: string, accessToken: string): Promise<UserServ
 /**
  * Create a new user
  */
-export async function createUser(userData: CreateUserRequest, accessToken: string): Promise<UserServiceResponse<User>> {
+export async function createUser(userData: CreateUserRequest): Promise<UserServiceResponse<User>> {
   const response = await fetch(`${API_BASE_URL}/dashboard/users`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
+    credentials: "include", // Include cookies in the request
     body: JSON.stringify(userData),
   });
 
@@ -124,13 +118,13 @@ export async function createUser(userData: CreateUserRequest, accessToken: strin
 /**
  * Update an existing user
  */
-export async function updateUser(id: string, userData: UpdateUserRequest, accessToken: string): Promise<UserServiceResponse<User>> {
+export async function updateUser(id: string, userData: UpdateUserRequest): Promise<UserServiceResponse<User>> {
   const response = await fetch(`${API_BASE_URL}/dashboard/users/${id}`, {
     method: "PUT",
     headers: {
-      "Authorization": `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
+    credentials: "include", // Include cookies in the request
     body: JSON.stringify(userData),
   });
 
@@ -159,13 +153,10 @@ export async function updateUser(id: string, userData: UpdateUserRequest, access
 /**
  * Delete a user
  */
-export async function deleteUser(id: string, accessToken: string): Promise<UserServiceResponse<null>> {
+export async function deleteUser(id: string): Promise<UserServiceResponse<null>> {
   const response = await fetch(`${API_BASE_URL}/dashboard/users/${id}`, {
     method: "DELETE",
-    headers: {
-      "Authorization": `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
+    credentials: "include", // Include cookies in the request
   });
 
   if (!response.ok) {

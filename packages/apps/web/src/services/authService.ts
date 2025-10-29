@@ -21,12 +21,6 @@ interface AuthResponse {
     email: string;
     role: string;
   };
-  accessToken: string;
-}
-
-interface RefreshResponse {
-  message: string;
-  accessToken: string;
 }
 
 interface Session {
@@ -46,8 +40,6 @@ interface SessionsResponse {
  * Login user
  */
 export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
-  console.log("Attempting to login", { email: credentials.email });
-  
   try {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
@@ -58,19 +50,8 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
       body: JSON.stringify(credentials),
     });
 
-    console.log("Login response received", { 
-      status: response.status,
-      statusText: response.statusText,
-      url: response.url
-    });
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Login failed", { 
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
       
       let error;
       try {
@@ -91,10 +72,8 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
     }
 
     const data = await response.json();
-    console.log("Login successful", data);
     return data;
   } catch (error) {
-    console.error("Login error", error);
     if (error instanceof TypeError && error.message === "Failed to fetch") {
       throw new Error("Failed to connect to the server. Please check your internet connection and try again.");
     }
@@ -153,35 +132,12 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Refresh access token
- */
-export async function refreshAccessToken(): Promise<RefreshResponse> {
-  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-    method: "POST",
-    credentials: "include", // Include cookies in the request
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    // Provide more descriptive error messages
-    if (response.status === 401) {
-      throw new Error("Session expired. Please login again.");
-    }
-    throw new Error(error.error || "Failed to refresh session. Please login again.");
-  }
-
-  return await response.json();
-}
-
-/**
  * Get current user profile
  */
-export async function getProfile(accessToken: string): Promise<AuthResponse["user"]> {
+export async function getProfile(): Promise<AuthResponse["user"]> {
   const response = await fetch(`${API_BASE_URL}/auth/profile`, {
     method: "GET",
-    headers: {
-      "Authorization": `Bearer ${accessToken}`,
-    },
+    credentials: "include", // Include cookies in the request
   });
 
   if (!response.ok) {

@@ -47,7 +47,6 @@ export default function LoginPage() {
   const handleSubmitDirect = async (email: string, password: string) => {
     // Prevent multiple simultaneous submissions
     if (isSubmitting.current) {
-      console.log("Submission blocked - already submitting");
       return;
     }
     
@@ -65,8 +64,10 @@ export default function LoginPage() {
     try {
       const response = await loginService({ email, password });
       // Get full user profile
-      const userProfile = await getProfile(response.accessToken);
-      login(userProfile, response.accessToken);
+      const userProfile = await getProfile();
+      // Omit email from user data stored in Redux
+      const { email: omittedEmail, ...userWithoutEmail } = userProfile;
+      login(userWithoutEmail);
       toastService.success({
         message: "Login Successful",
         description: "Welcome back! You have been successfully logged in.",
@@ -85,7 +86,6 @@ export default function LoginPage() {
         router.push("/user");
       }
     } catch (error: any) {
-      console.error("Login failed in UI", error);
       toastService.error({
         message: "Login Failed",
         description: error.message || "Failed to login. Please check your credentials and try again.",
@@ -101,7 +101,6 @@ export default function LoginPage() {
     
     // Prevent multiple simultaneous submissions
     if (isSubmitting.current) {
-      console.log("Submission blocked - already submitting");
       return;
     }
     
@@ -119,8 +118,10 @@ export default function LoginPage() {
     try {
       const response = await loginService({ email, password });
       // Get full user profile
-      const userProfile = await getProfile(response.accessToken);
-      login(userProfile, response.accessToken);
+      const userProfile = await getProfile();
+      // Omit email from user data stored in Redux
+      const { email: omittedEmail, ...userWithoutEmail } = userProfile;
+      login(userWithoutEmail);
       toastService.success({
         message: "Login Successful",
         description: "Welcome back! You have been successfully logged in.",
@@ -137,13 +138,12 @@ export default function LoginPage() {
         if (redirectUrl) {
           router.push(redirectUrl);
         } else {
-          router.push("/admin");
+          router.push("/dashboard");
         }
       } else {
         router.push("/user");
       }
     } catch (error: any) {
-      console.error("Login failed in UI", error);
       toastService.error({
         message: "Login Failed",
         description: error.message || "Failed to login. Please check your credentials and try again.",

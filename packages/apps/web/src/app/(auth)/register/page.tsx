@@ -36,7 +36,7 @@ export default function RegisterPage() {
 
     try {
       const response = await registerService({ firstName, lastName, email, password });
-      login(response.user, response.accessToken);
+      login(response.user); // Pass only the user object, not the accessToken
       toastService.success({
         message: "Registration Successful",
         description: "Account created successfully! Welcome to our platform.",

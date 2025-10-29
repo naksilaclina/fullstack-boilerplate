@@ -41,7 +41,6 @@ export default function DashboardPage() {
                 <CardContent>
                   <div className="space-y-2">
                     <p><span className="font-medium">Name:</span> {user?.firstName} {user?.lastName}</p>
-                    <p><span className="font-medium">Email:</span> {user?.email}</p>
                     <p><span className="font-medium">Role:</span> {user?.role}</p>
                   </div>
                 </CardContent>
@@ -59,7 +58,7 @@ export default function DashboardPage() {
                     <button className="w-full text-left p-2 hover:bg-gray-100 rounded">
                       Account Settings
                     </button>
-                    <Link href="/user/sessions" passHref>
+                    <Link href="/dashboard/sessions" passHref>
                       <Button variant="outline" className="w-full">
                         Manage Sessions
                       </Button>

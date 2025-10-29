@@ -9,6 +9,13 @@ import { authRateLimiter } from "~api/middlewares";
 const router = Router();
 const SALT_ROUNDS = 10;
 
+// Helper function for conditional logging
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+};
+
 /**
  * POST /api/v1/auth/register
  * Register endpoint
@@ -85,7 +92,9 @@ router.post(
         accessToken,
       });
     } catch (error) {
-      console.error("Registration error:", error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Registration error:", error);
+      }
       return res.status(500).json({
         error: "Internal server error during registration",
       });

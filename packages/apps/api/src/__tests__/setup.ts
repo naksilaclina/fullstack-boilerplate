@@ -21,3 +21,9 @@ afterEach(async () => {
     await collection.deleteMany({});
   }
 });
+
+describe('Test Setup', () => {
+  it('should have a valid test setup', () => {
+    expect(true).toBe(true);
+  });
+});

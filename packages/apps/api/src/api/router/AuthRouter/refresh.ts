@@ -29,19 +29,26 @@ const getClientIP = (req: Request): string => {
   return req.ip;
 };
 
+// Helper function for conditional logging
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+};
+
 /**
  * POST /api/v1/auth/refresh
  * Refresh access token using refresh token
  */
 router.post("/", async (req: Request, res: Response) => {
   try {
-    console.log("Token refresh attempt started", { 
+    devLog("Token refresh attempt started", { 
       timestamp: new Date().toISOString()
     });
 
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
-      console.log("No refresh token provided");
+      devLog("No refresh token provided");
       return res.status(401).json({
         error: "Refresh token is required",
       });
@@ -50,13 +57,13 @@ router.post("/", async (req: Request, res: Response) => {
     // Verify refresh token
     const decoded = verifyRefreshToken(refreshToken);
     if (!decoded) {
-      console.log("Invalid refresh token");
+      devLog("Invalid refresh token");
       return res.status(401).json({
         error: "Invalid refresh token",
       });
     }
 
-    console.log("Refresh token verified", { jti: decoded.jti, userId: decoded.userId });
+    devLog("Refresh token verified", { jti: decoded.jti, userId: decoded.userId });
 
     // Check if refresh token is blacklisted
     // (This would be implemented in a production environment)
@@ -64,17 +71,17 @@ router.post("/", async (req: Request, res: Response) => {
     // Find user
     const user = await UserModel.findById(decoded.userId);
     if (!user) {
-      console.log("User not found for refresh token", { userId: decoded.userId });
+      devLog("User not found for refresh token", { userId: decoded.userId });
       return res.status(401).json({
         error: "User not found",
       });
     }
 
-    console.log("User found for refresh", { userId: user._id, isActive: user.isActive });
+    devLog("User found for refresh", { userId: user._id, isActive: user.isActive });
 
     // Check if account is active
     if (!user.isActive) {
-      console.log("Account is deactivated during refresh", { userId: user._id });
+      devLog("Account is deactivated during refresh", { userId: user._id });
       return res.status(401).json({
         error: "Account is deactivated",
       });
@@ -103,7 +110,7 @@ router.post("/", async (req: Request, res: Response) => {
     });
     
     await session.save();
-    console.log("New session created during refresh", { sessionId, userId: user._id, clientIP });
+    devLog("New session created during refresh", { sessionId, userId: user._id, clientIP });
 
     // Set new refresh token in HTTP-only cookie
     res.cookie("refreshToken", newRefreshToken, {
@@ -114,13 +121,23 @@ router.post("/", async (req: Request, res: Response) => {
       path: "/",
     });
 
-    // Return new access token
+    // Set new access token in HTTP-only cookie
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: "/",
+    });
+
+    // Return success message
     return res.status(200).json({
       message: "Token refresh successful",
-      accessToken: newAccessToken,
     });
   } catch (error) {
-    console.error("Token refresh error:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Token refresh error:", error);
+    }
     return res.status(500).json({
       error: "Internal server error during token refresh",
     });

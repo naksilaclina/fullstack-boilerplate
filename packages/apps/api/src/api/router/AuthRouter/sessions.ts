@@ -1,9 +1,16 @@
 import { Router, Request, Response } from "express";
 import { SessionModel } from "@naksilaclina/mongodb";
 import { authenticate } from "~api/middlewares";
-import { verifyRefreshToken } from "~api/services/auth/jwt.utils";
+import { verifyRefreshToken, invalidateRefreshToken } from "~api/services/auth/jwt.utils";
 
 const router = Router();
+
+// Helper function for conditional logging
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+};
 
 /**
  * GET /api/v1/auth/sessions
@@ -37,7 +44,9 @@ router.get("/", authenticate, async (req: Request, res: Response) => {
       sessions: sessionData,
     });
   } catch (error) {
-    console.error("Sessions error:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Sessions error:", error);
+    }
     return res.status(500).json({
       error: "Internal server error while fetching sessions",
     });
@@ -68,6 +77,9 @@ router.delete("/:id", authenticate, async (req: Request, res: Response) => {
       });
     }
 
+    // Invalidate the refresh token before deleting the session
+    invalidateRefreshToken(session.refreshTokenId);
+
     // Delete the session
     await SessionModel.deleteOne({ _id: sessionId, userId });
     
@@ -75,7 +87,9 @@ router.delete("/:id", authenticate, async (req: Request, res: Response) => {
       message: "Session revoked successfully",
     });
   } catch (error) {
-    console.error("Session revoke error:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Session revoke error:", error);
+    }
     return res.status(500).json({
       error: "Internal server error while revoking session",
     });
@@ -106,19 +120,30 @@ router.delete("/", authenticate, async (req: Request, res: Response) => {
       }
     }
 
-    // Delete all sessions except the current one
+    // Find all sessions to be deleted
     const deleteQuery: any = { userId };
     if (currentSessionId) {
       deleteQuery.refreshTokenId = { $ne: currentSessionId };
     }
     
+    // Get sessions that will be deleted to invalidate their refresh tokens
+    const sessionsToRevoke = await SessionModel.find(deleteQuery);
+    
+    // Invalidate refresh tokens for all sessions being deleted
+    for (const session of sessionsToRevoke) {
+      invalidateRefreshToken(session.refreshTokenId);
+    }
+    
+    // Delete all sessions except the current one
     await SessionModel.deleteMany(deleteQuery);
     
     return res.status(200).json({
       message: "All sessions revoked successfully",
     });
   } catch (error) {
-    console.error("Sessions revoke error:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Sessions revoke error:", error);
+    }
     return res.status(500).json({
       error: "Internal server error while revoking sessions",
     });

@@ -24,3 +24,5 @@ web-build/
 
 # Development seed accounts
 DEVELOPMENT_SEED_ACCOUNTS.json
+
+prompt.md

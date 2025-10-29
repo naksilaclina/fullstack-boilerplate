@@ -103,3 +103,15 @@ export function invalidateRefreshToken(jti: string): void {
   // Optional: Clean up old invalidated tokens periodically
   // In production, you'd want to store these in a database with expiration
 }
+
+/**
+ * Clean up expired invalidated tokens (for production use)
+ */
+export function cleanupInvalidTokens(): void {
+  // In a production environment, this would clean up expired tokens from database
+  // For now, we'll just clear the set periodically
+  if (invalidRefreshTokens.size > 10000) {
+    // Simple cleanup to prevent memory issues
+    invalidRefreshTokens.clear();
+  }
+}

@@ -1,8 +1,15 @@
 import { Router, Request, Response } from "express";
 import { SessionModel } from "@naksilaclina/mongodb";
-import { verifyRefreshToken } from "~api/services/auth/jwt.utils";
+import { verifyRefreshToken, invalidateRefreshToken } from "~api/services/auth/jwt.utils";
 
 const router = Router();
+
+// Helper function for conditional logging
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+};
 
 /**
  * POST /api/v1/auth/logout
@@ -19,6 +26,8 @@ router.post("/", async (req: Request, res: Response) => {
       if (decoded) {
         // Delete the session from database
         await SessionModel.deleteOne({ refreshTokenId: decoded.jti });
+        // Invalidate the refresh token to prevent reuse
+        invalidateRefreshToken(decoded.jti);
       }
     }
 
@@ -30,11 +39,21 @@ router.post("/", async (req: Request, res: Response) => {
       path: "/",
     });
 
+    // Clear the access token cookie
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
+
     return res.status(200).json({
       message: "Logout successful",
     });
   } catch (error) {
-    console.error("Logout error:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Logout error:", error);
+    }
     return res.status(500).json({
       error: "Internal server error during logout",
     });

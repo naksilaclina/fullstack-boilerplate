@@ -4,6 +4,13 @@ import { authenticate } from "~api/middlewares";
 
 const router = Router();
 
+// Helper function for conditional logging
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+};
+
 /**
  * GET /api/v1/auth/profile
  * Get current user profile
@@ -36,7 +43,9 @@ router.get("/", authenticate, async (req: Request, res: Response) => {
       role: user.role,
     });
   } catch (error) {
-    console.error("Profile error:", error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Profile error:", error);
+    }
     return res.status(500).json({
       error: "Internal server error while fetching profile",
     });

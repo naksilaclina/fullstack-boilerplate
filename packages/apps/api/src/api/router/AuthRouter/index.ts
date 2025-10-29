@@ -6,7 +6,7 @@ import logout from "./logout";
 import refresh from "./refresh";
 import profile from "./profile";
 import sessions from "./sessions";
-import test from "./test";
+import test from "./auth.test.route";
 
 const router = Router();
 

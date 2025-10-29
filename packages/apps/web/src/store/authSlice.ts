@@ -9,38 +9,36 @@ export interface User {
 }
 
 interface AuthState {
-  user: User | null;
+  user: Omit<User, 'email'> | null;
   isAuthenticated: boolean;
-  accessToken: string | null;
 }
 
 const initialState: AuthState = {
   user: null,
-  isAuthenticated: false,
-  accessToken: null,
+  isAuthenticated: false
 };
 
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    login: (state, action: PayloadAction<{ user: User; accessToken: string }>) => {
+    setUser: (state, action: PayloadAction<{ user: Omit<User, 'email'> | null }>) => {
       state.user = action.payload.user;
-      state.isAuthenticated = true;
-      state.accessToken = action.payload.accessToken;
+      state.isAuthenticated = !!action.payload.user;
     },
-    logout: (state) => {
+    clearUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
-      state.accessToken = null;
     },
-    setAccessToken: (state, action: PayloadAction<string>) => {
-      state.accessToken = action.payload;
-    },
+    // Initialize auth state (no longer uses localStorage)
+    initAuthState: (state) => {
+      // Auth state will be initialized by checking with the backend
+      // This is a no-op now since we're using cookies
+    }
   },
 });
 
-export const { login, logout, setAccessToken } = authSlice.actions;
+export const { setUser, clearUser, initAuthState } = authSlice.actions;
 
 export type { AuthState };
 

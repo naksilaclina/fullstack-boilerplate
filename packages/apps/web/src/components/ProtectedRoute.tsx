@@ -1,49 +1,66 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { refreshAccessToken } from "@/services/authService";
+import { getProfile } from "@/services/authService";
 import { toastService } from "@/services/toastService";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, accessToken, logout, setAccessToken } = useAuth();
+  const { user, isAuthenticated, login, logout } = useAuth();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
+    console.log('ProtectedRoute checkAuth called with state:', {
+      user,
+      isAuthenticated
+    });
+    
     const checkAuth = async () => {
-      // If user is not authenticated, redirect to login
+      // If user is not authenticated, try to get profile from server
       if (!isAuthenticated) {
-        toastService.error({
-          message: "Authentication Required",
-          description: "Please log in to access this page.",
-        });
-        router.push("/login");
-        return;
-      }
-
-      // If there's no access token, try to refresh it
-      if (!accessToken) {
+        console.log('User not authenticated, trying to get profile');
         try {
-          const response = await refreshAccessToken();
-          setAccessToken(response.accessToken);
-        } catch (error) {
-          // If refresh fails, log out the user
-          toastService.error({
-            message: "Session Expired",
-            description: "Your session has expired. Please log in again.",
+          const profile = await getProfile();
+          login({
+            id: profile.id,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            role: profile.role
           });
-          logout();
+        } catch (error) {
+          // If getting profile fails, redirect to login
+          console.log('Failed to get profile, redirecting to login');
+          toastService.error({
+            message: "Authentication Required",
+            description: "Please log in to access this page.",
+          });
           router.push("/login");
+          setIsCheckingAuth(false);
+          return;
         }
       }
+      
+      setIsCheckingAuth(false);
     };
 
     checkAuth();
-  }, [isAuthenticated, accessToken, logout, setAccessToken, router]);
+  }, [isAuthenticated, login, logout, router, user]);
 
-  // If user is not authenticated or there's no access token, don't render children
-  if (!isAuthenticated || !accessToken) {
+  // If we're still checking auth, don't render anything
+  if (isCheckingAuth) {
+    return <div>Loading...</div>;
+  }
+
+  // If user is not authenticated, don't render children
+  console.log('ProtectedRoute rendering with state:', {
+    user,
+    isAuthenticated,
+    shouldRender: isAuthenticated
+  });
+  
+  if (!isAuthenticated) {
     return null;
   }
 

@@ -30,7 +30,6 @@ export default function UserPanel() {
             <CardContent>
               <div className="space-y-2">
                 <p><span className="font-medium">Name:</span> {user?.firstName} {user?.lastName}</p>
-                <p><span className="font-medium">Email:</span> {user?.email}</p>
                 <p><span className="font-medium">Role:</span> {user?.role}</p>
               </div>
             </CardContent>

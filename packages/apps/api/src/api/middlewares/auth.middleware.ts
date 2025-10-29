@@ -14,9 +14,18 @@ declare global {
  */
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
-    // Get the token from the Authorization header
+    let token: string | undefined;
+    
+    // First, check for token in Authorization header
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    }
+    
+    // If no token in header, check for token in cookies
+    if (!token && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
+    }
 
     // If no token, return unauthorized
     if (!token) {

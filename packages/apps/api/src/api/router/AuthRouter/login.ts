@@ -28,6 +28,13 @@ const getClientIP = (req: Request): string => {
   return req.ip;
 };
 
+// Helper function for conditional logging
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+};
+
 /**
  * POST /api/v1/auth/login
  * Login endpoint
@@ -42,7 +49,7 @@ router.post(
   handleValidationErrors,
   async (req: Request, res: Response) => {
     try {
-      console.log("Login attempt started", { 
+      devLog("Login attempt started", { 
         email: req.body.email,
         timestamp: new Date().toISOString()
       });
@@ -50,7 +57,7 @@ router.post(
       // Check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        console.log("Validation failed", { 
+        devLog("Validation failed", { 
           errors: errors.array(),
           email: req.body.email
         });
@@ -61,22 +68,22 @@ router.post(
       }
 
       const { email, password } = req.body;
-      console.log("Validation passed", { email });
+      devLog("Validation passed", { email });
 
       // Find user by email
       const user = await UserModel.findOne({ email });
       if (!user) {
-        console.log("User not found", { email });
+        devLog("User not found", { email });
         return res.status(401).json({
           error: "Invalid credentials",
         });
       }
 
-      console.log("User found", { email, userId: user._id, isActive: user.isActive });
+      devLog("User found", { email, userId: user._id, isActive: user.isActive });
 
       // Check if account is active
       if (!user.isActive) {
-        console.log("Account is deactivated", { email, userId: user._id });
+        devLog("Account is deactivated", { email, userId: user._id });
         return res.status(401).json({
           error: "Account is deactivated",
         });
@@ -85,19 +92,19 @@ router.post(
       // Validate password
       const isPasswordValid = await compare(password, user.password);
       if (!isPasswordValid) {
-        console.log("Invalid password", { email, userId: user._id });
+        devLog("Invalid password", { email, userId: user._id });
         return res.status(401).json({
           error: "Invalid credentials",
         });
       }
 
-      console.log("Password is valid", { email, userId: user._id });
+      devLog("Password is valid", { email, userId: user._id });
 
       // Generate tokens
-      console.log("Generating access token", { email, userId: user._id });
+      devLog("Generating access token", { email, userId: user._id });
       const accessToken = signAccessToken(user as IUserDocument);
       
-      console.log("Generating refresh token", { email, userId: user._id });
+      devLog("Generating refresh token", { email, userId: user._id });
       const refreshToken = signRefreshToken(user as IUserDocument);
 
       // Create session record
@@ -113,10 +120,10 @@ router.post(
       });
       
       await session.save();
-      console.log("Session created", { sessionId, userId: user._id, clientIP });
+      devLog("Session created", { sessionId, userId: user._id, clientIP });
 
       // Set refresh token in HTTP-only cookie
-      console.log("Setting refresh token cookie", { email, userId: user._id });
+      devLog("Setting refresh token cookie", { email, userId: user._id });
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -125,8 +132,18 @@ router.post(
         path: "/",
       });
 
-      // Return user data and access token
-      console.log("Login successful", { 
+      // Set access token in HTTP-only cookie for enhanced security
+      devLog("Setting access token cookie", { email, userId: user._id });
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        path: "/",
+      });
+
+      // Return user data (without tokens, as they're in cookies now)
+      devLog("Login successful", { 
         email: user.email,
         userId: user._id,
         role: user.role
@@ -141,10 +158,11 @@ router.post(
           email: user.email,
           role: user.role,
         },
-        accessToken,
       });
     } catch (error) {
-      console.error("Login error:", error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Login error:", error);
+      }
       return res.status(500).json({
         error: "Internal server error during login",
       });
