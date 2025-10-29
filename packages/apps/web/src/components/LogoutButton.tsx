@@ -1,0 +1,43 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { NavbarButton } from "@/components/ui/resizable-navbar";
+import { useAuthStore } from "@/store/authStore";
+import { logout as logoutService } from "@/services/authService";
+import { toastService } from "@/services/toastService";
+
+export default function LogoutButton() {
+  const router = useRouter();
+  const { logout, isAuthenticated } = useAuthStore(); // Get authentication state
+
+  const handleLogout = async () => {
+    try {
+      await logoutService();
+      logout();
+      toastService.success({
+        message: "Logout Successful",
+        description: "You have been successfully logged out.",
+      });
+      router.push("/login");
+    } catch (error: any) {
+      // Even if the API call fails, we still log out the user locally
+      logout();
+      toastService.success({
+        message: "Logged Out",
+        description: "You have been logged out (local only).",
+      });
+      router.push("/login");
+    }
+  };
+
+  // Don't render the button if user is not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return (
+    <NavbarButton variant="secondary" onClick={handleLogout}>
+      Logout
+    </NavbarButton>
+  );
+}
