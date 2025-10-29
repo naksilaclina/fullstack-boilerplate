@@ -1,0 +1,36 @@
+{
+  "name": "@naksilaclina/monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/apps/api",
+    "packages/apps/web",
+    "packages/modules/mongodb"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "pretty": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "dev": "node bin/dev.js",
+    "dev:seed": "cross-env RUN_SEED=true node bin/dev.js",
+    "seed": "npm run seed --workspace=@naksilaclina/mongodb",
+    "start": "node bin/start.js"
+  },
+  "devDependencies": {
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.49.0",
+    "@typescript-eslint/parser": "^5.49.0",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
+    "eslint": "^8.32.0",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-config-standard-with-typescript": "^34.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.3",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "framer-motion": "^12.23.24",
+    "lucide-react": "^0.548.0"
+  }
+}

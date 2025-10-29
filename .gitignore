@@ -1,0 +1,26 @@
+node_modules/
+.expo/
+dist/
+coverage/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+.env*
+.terraform/
+
+*.png
+*.jpeg
+*.jpg
+
+# macOS
+.DS_Store
+
+/.idea/
+
+# Development seed accounts
+DEVELOPMENT_SEED_ACCOUNTS.json
