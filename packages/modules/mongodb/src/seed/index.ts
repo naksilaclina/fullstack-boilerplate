@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config({ path: "../../../.env" });
+
 import { hash } from "bcrypt";
 import mongoose from "mongoose";
 import { UserModel } from "../entities";

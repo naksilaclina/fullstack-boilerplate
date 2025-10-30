@@ -1,5 +1,5 @@
 /* eslint-disable import/first */
-require("dotenv").config(); // eslint-disable-line
+require("dotenv").config({ path: "../../.env" }); // eslint-disable-line
 
 import "../src/moduleAliases";
 import App from "../src/App";

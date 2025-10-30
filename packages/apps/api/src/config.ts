@@ -1,4 +1,4 @@
-export const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+export const port = process.env.API_PORT ? parseInt(process.env.API_PORT) : 5000;
 
 export const mongodbUri =
   process.env.NODE_ENV === "development"
@@ -9,4 +9,4 @@ export const isDevelopment = process.env.NODE_ENV === "development";
 
 // JWT Configuration
 export const jwtSecret = process.env.JWT_SECRET ?? "your-super-secret-jwt-key";
-export const jwtRefreshSecret = process.env.REFRESH_TOKEN_SECRET ?? "your-super-secret-refresh-key";
+export const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET ?? "your-super-secret-refresh-key";

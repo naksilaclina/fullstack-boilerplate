@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config({ path: "../../.env" });
+
 import mongoose from "mongoose";
 
 mongoose.set("strictQuery", false);
