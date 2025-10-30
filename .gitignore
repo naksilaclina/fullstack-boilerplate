@@ -25,3 +25,4 @@ web-build/
 
 # Markdown files
 *.md
+.vscode/settings.json
