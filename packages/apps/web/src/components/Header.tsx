@@ -11,7 +11,7 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import LogoutButton from "@/components/LogoutButton";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { useTheme } from "next-themes";

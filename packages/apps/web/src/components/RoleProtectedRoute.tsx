@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { toastService } from "@/services/toastService";
 import { authorizationService } from "@/services/authorizationService";
 import { UserRole } from "@/lib/roles";
