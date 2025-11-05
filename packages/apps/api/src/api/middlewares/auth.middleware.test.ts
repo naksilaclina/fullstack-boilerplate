@@ -1,10 +1,14 @@
 import { authenticate } from './auth.middleware';
 import { verifyAccessToken } from '~api/services/auth/jwt.utils';
+import { SessionModel } from '@naksilaclina/mongodb';
 
 // Mock the verifyAccessToken function
 jest.mock('~api/services/auth/jwt.utils', () => ({
   verifyAccessToken: jest.fn(),
 }));
+
+// Mock the SessionModel
+jest.mock('@naksilaclina/mongodb');
 
 // Mock request, response, and next function
 const mockRequest = {
@@ -21,6 +25,8 @@ const mockNext = jest.fn();
 describe('Auth Middleware', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset all mocks to their initial state
+    (SessionModel.findOne as jest.Mock).mockReset();
   });
 
   describe('Token Validation', () => {
@@ -28,6 +34,9 @@ describe('Auth Middleware', () => {
       const req = { ...mockRequest, headers: {} };
       const res = { ...mockResponse };
       const next = jest.fn();
+
+      // Mock SessionModel.findOne to avoid database calls
+      (SessionModel.findOne as jest.Mock).mockResolvedValue(null);
 
       await authenticate(req, res, next);
 
@@ -43,6 +52,12 @@ describe('Auth Middleware', () => {
 
       // Mock verifyAccessToken to return null for invalid token
       (verifyAccessToken as jest.Mock).mockReturnValue(null);
+      
+      // Mock SessionModel.findOne to return a valid session
+      (SessionModel.findOne as jest.Mock).mockResolvedValue({
+        refreshTokenId: 'session-id',
+        expiresAt: new Date(Date.now() + 3600000) // 1 hour from now
+      });
 
       await authenticate(req, res, next);
 
@@ -60,6 +75,12 @@ describe('Auth Middleware', () => {
       // Mock verifyAccessToken to return valid payload
       const mockPayload = { userId: '123', email: 'test@example.com', role: 'user' };
       (verifyAccessToken as jest.Mock).mockReturnValue(mockPayload);
+      
+      // Mock SessionModel.findOne to return a valid session
+      (SessionModel.findOne as jest.Mock).mockResolvedValue({
+        refreshTokenId: 'session-id',
+        expiresAt: new Date(Date.now() + 3600000) // 1 hour from now
+      });
 
       await authenticate(req, res, next);
 
@@ -78,6 +99,12 @@ describe('Auth Middleware', () => {
       // Mock verifyAccessToken to throw an error
       (verifyAccessToken as jest.Mock).mockImplementation(() => {
         throw new Error('Internal error');
+      });
+      
+      // Mock SessionModel.findOne to return a valid session
+      (SessionModel.findOne as jest.Mock).mockResolvedValue({
+        refreshTokenId: 'session-id',
+        expiresAt: new Date(Date.now() + 3600000) // 1 hour from now
       });
 
       await authenticate(req, res, next);

@@ -24,6 +24,11 @@ const SessionSchema = new Schema(
       required: true,
       index: { expires: 0 }, // TTL index to automatically remove expired sessions
     },
+    invalidatedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    }
   },
   { 
     timestamps: true,

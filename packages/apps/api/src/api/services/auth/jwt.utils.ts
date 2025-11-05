@@ -1,17 +1,29 @@
 import jwt from "jsonwebtoken";
-import { IUserDocument } from "@naksilaclina/mongodb";
+import { IUserDocument, SessionModel } from "@naksilaclina/mongodb";
 import { jwtSecret, jwtRefreshSecret } from "~config";
 import crypto from "crypto";
+
+// Validate that secrets are properly configured
+const JWT_SECRET = jwtSecret as string;
+const JWT_REFRESH_SECRET = jwtRefreshSecret as string;
+
+if (!JWT_SECRET) {
+  const errorMessage = "JWT_SECRET is not configured. Please set it in your environment variables.";
+  console.error(errorMessage);
+  throw new Error(errorMessage);
+}
+
+if (!JWT_REFRESH_SECRET) {
+  const errorMessage = "JWT_REFRESH_SECRET is not configured. Please set it in your environment variables.";
+  console.error(errorMessage);
+  throw new Error(errorMessage);
+}
 
 export interface JwtPayload {
   userId: string;
   email: string;
   role: string;
 }
-
-// For refresh token rotation, we'll store used tokens for a short period
-// In production, this should be stored in a database or cache
-const invalidRefreshTokens = new Set<string>();
 
 /**
  * Sign an access token JWT
@@ -23,7 +35,7 @@ export function signAccessToken(user: IUserDocument): string {
     role: user.role,
   };
 
-  return jwt.sign(payload, jwtSecret, {
+  return jwt.sign(payload, JWT_SECRET, {
     expiresIn: "15m",
     issuer: "naksilaclina",
     audience: "naksilaclina-users",
@@ -48,7 +60,7 @@ export function signRefreshToken(user: IUserDocument): string {
       ...payload,
       jti,
     },
-    jwtRefreshSecret,
+    JWT_REFRESH_SECRET,
     {
       expiresIn: "7d",
       issuer: "naksilaclina",
@@ -62,12 +74,17 @@ export function signRefreshToken(user: IUserDocument): string {
  */
 export function verifyAccessToken(token: string): JwtPayload | null {
   try {
-    const decoded = jwt.verify(token, jwtSecret, {
+    const decoded = jwt.verify(token, JWT_SECRET, {
       issuer: "naksilaclina",
       audience: "naksilaclina-users",
-    }) as JwtPayload;
+    });
     
-    return decoded;
+    // Type guard to ensure decoded is a JwtPayload
+    if (typeof decoded === 'object' && decoded !== null && 'userId' in decoded) {
+      return decoded as JwtPayload;
+    }
+    
+    return null;
   } catch (error) {
     return null;
   }
@@ -76,19 +93,32 @@ export function verifyAccessToken(token: string): JwtPayload | null {
 /**
  * Verify a refresh token JWT
  */
-export function verifyRefreshToken(token: string): (JwtPayload & { jti: string }) | null {
+export async function verifyRefreshToken(token: string): Promise<(JwtPayload & { jti: string }) | null> {
   try {
-    const decoded = jwt.verify(token, jwtRefreshSecret, {
+    const decoded = jwt.verify(token, JWT_REFRESH_SECRET, {
       issuer: "naksilaclina",
       audience: "naksilaclina-users",
-    }) as JwtPayload & { jti: string };
+    });
     
-    // Check if token has been invalidated (rotation)
-    if (invalidRefreshTokens.has(decoded.jti)) {
+    // Type guard to ensure decoded is a JwtPayload with jti
+    if (typeof decoded !== 'object' || decoded === null || !('userId' in decoded) || !('jti' in decoded)) {
       return null;
     }
     
-    return decoded;
+    const payload = decoded as JwtPayload & { jti: string };
+    
+    // Check if token has been invalidated (rotation) by looking in the database
+    const session = await SessionModel.findOne({ 
+      refreshTokenId: payload.jti,
+      invalidatedAt: { $ne: null }
+    });
+    
+    // If we found an invalidated session, the token is invalid
+    if (session) {
+      return null;
+    }
+    
+    return payload;
   } catch (error) {
     return null;
   }
@@ -97,21 +127,18 @@ export function verifyRefreshToken(token: string): (JwtPayload & { jti: string }
 /**
  * Invalidate a refresh token (for rotation)
  */
-export function invalidateRefreshToken(jti: string): void {
-  invalidRefreshTokens.add(jti);
-  
-  // Optional: Clean up old invalidated tokens periodically
-  // In production, you'd want to store these in a database with expiration
+export async function invalidateRefreshToken(jti: string): Promise<void> {
+  // Mark the session as invalidated in the database
+  await SessionModel.updateOne(
+    { refreshTokenId: jti },
+    { invalidatedAt: new Date() }
+  );
 }
 
 /**
- * Clean up expired invalidated tokens (for production use)
+ * Clean up expired invalidated tokens (handled by MongoDB TTL index)
  */
 export function cleanupInvalidTokens(): void {
-  // In a production environment, this would clean up expired tokens from database
-  // For now, we'll just clear the set periodically
-  if (invalidRefreshTokens.size > 10000) {
-    // Simple cleanup to prevent memory issues
-    invalidRefreshTokens.clear();
-  }
+  // No need to implement cleanup as MongoDB TTL index handles this automatically
+  // The expiresAt field has a TTL index that automatically removes expired sessions
 }

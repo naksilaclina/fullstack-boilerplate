@@ -25,7 +25,7 @@ export async function validateRefreshToken(req: Request, res: Response, next: Ne
     }
 
     // Verify the refresh token
-    const decoded = verifyRefreshToken(refreshToken);
+    const decoded = await verifyRefreshToken(refreshToken);
     
     if (!decoded) {
       return res.status(401).json({ 

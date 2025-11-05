@@ -1,5 +1,5 @@
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken, invalidateRefreshToken } from './jwt.utils';
-import { UserModel } from '@naksilaclina/mongodb';
+import { UserModel, SessionModel } from '@naksilaclina/mongodb';
 import jwt from 'jsonwebtoken';
 
 // Mock user document for testing
@@ -21,7 +21,7 @@ describe('JWT Utilities', () => {
       expect(typeof token).toBe('string');
       
       // Verify the token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
       expect(decoded).toHaveProperty('userId', mockUser._id);
       expect(decoded).toHaveProperty('email', mockUser.email);
       expect(decoded).toHaveProperty('role', mockUser.role);
@@ -35,7 +35,7 @@ describe('JWT Utilities', () => {
       expect(typeof token).toBe('string');
       
       // Verify the token
-      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key');
+      const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string);
       expect(decoded).toHaveProperty('userId', mockUser._id);
       expect(decoded).toHaveProperty('email', mockUser.email);
       expect(decoded).toHaveProperty('role', mockUser.role);
@@ -61,9 +61,9 @@ describe('JWT Utilities', () => {
   });
 
   describe('verifyRefreshToken', () => {
-    it('should verify a valid refresh token', () => {
+    it('should verify a valid refresh token', async () => {
       const token = signRefreshToken(mockUser);
-      const decoded = verifyRefreshToken(token);
+      const decoded = await verifyRefreshToken(token);
       
       expect(decoded).not.toBeNull();
       expect(decoded).toHaveProperty('userId', mockUser._id);
@@ -72,17 +72,28 @@ describe('JWT Utilities', () => {
       expect(decoded).toHaveProperty('jti');
     });
 
-    it('should return null for an invalid refresh token', () => {
-      const decoded = verifyRefreshToken('invalid-token');
+    it('should return null for an invalid refresh token', async () => {
+      const decoded = await verifyRefreshToken('invalid-token');
       expect(decoded).toBeNull();
     });
 
-    it('should return null for an invalidated refresh token', () => {
+    it('should return null for an invalidated refresh token', async () => {
       const token = signRefreshToken(mockUser);
       const decoded = jwt.decode(token) as any;
-      invalidateRefreshToken(decoded.jti);
       
-      const verified = verifyRefreshToken(token);
+      // Create a session in the database first
+      const session = new SessionModel({
+        userId: mockUser._id,
+        refreshTokenId: decoded.jti,
+        ipAddr: '127.0.0.1',
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      });
+      await session.save();
+      
+      // Invalidate the refresh token
+      await invalidateRefreshToken(decoded.jti);
+      
+      const verified = await verifyRefreshToken(token);
       expect(verified).toBeNull();
     });
   });

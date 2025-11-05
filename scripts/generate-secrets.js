@@ -4,6 +4,10 @@ const path = require('path');
 
 // Function to generate cryptographically secure random string
 function generateSecureSecret(length = 64) {
+  // Ensure minimum length for security
+  if (length < 32) {
+    throw new Error('Secret length must be at least 32 characters for security');
+  }
   return crypto.randomBytes(length).toString('hex');
 }
 
@@ -65,9 +69,20 @@ function updateEnvExample(envExamplePath) {
   console.log(`Updated .env.example at ${envExamplePath}`);
 }
 
-// Generate secure secrets
-const jwtSecret = generateSecureSecret();
-const refreshTokenSecret = generateSecureSecret();
+// Generate secure secrets (64 bytes = 128 hex characters for strong security)
+const jwtSecret = generateSecureSecret(64);
+const refreshTokenSecret = generateSecureSecret(64);
+
+// Validate secrets meet minimum security requirements
+if (jwtSecret.length < 64) {
+  console.error('❌ Generated JWT_SECRET is too short');
+  process.exit(1);
+}
+
+if (refreshTokenSecret.length < 64) {
+  console.error('❌ Generated JWT_REFRESH_SECRET is too short');
+  process.exit(1);
+}
 
 const secrets = {
   JWT_SECRET: jwtSecret,

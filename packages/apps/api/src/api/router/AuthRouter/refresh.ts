@@ -55,7 +55,7 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     // Verify refresh token
-    const decoded = verifyRefreshToken(refreshToken);
+    const decoded = await verifyRefreshToken(refreshToken);
     if (!decoded) {
       devLog("Invalid refresh token");
       return res.status(401).json({
@@ -91,7 +91,7 @@ router.post("/", async (req: Request, res: Response) => {
     await SessionModel.deleteOne({ refreshTokenId: decoded.jti });
     
     // Invalidate the old refresh token (rotation)
-    invalidateRefreshToken(decoded.jti);
+    await invalidateRefreshToken(decoded.jti);
 
     // Generate new tokens
     const newAccessToken = signAccessToken(user as IUserDocument);

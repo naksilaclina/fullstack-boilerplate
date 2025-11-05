@@ -57,6 +57,13 @@ export const authSlice = createSlice({
       // This will trigger the async thunk to check auth status
       state.loading = true;
       state.error = null;
+    },
+    // Logout action to clear user state
+    logout: (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.loading = false;
+      state.error = null;
     }
   },
   extraReducers: (builder) => {
@@ -86,7 +93,7 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setUser, clearUser, initAuthState } = authSlice.actions;
+export const { setUser, clearUser, initAuthState, logout } = authSlice.actions;
 
 export type { AuthState };
 

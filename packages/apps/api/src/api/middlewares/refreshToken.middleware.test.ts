@@ -42,7 +42,7 @@ describe('Refresh Token Middleware', () => {
       const next = jest.fn();
 
       // Mock verifyRefreshToken to return null for invalid token
-      (verifyRefreshToken as jest.Mock).mockReturnValue(null);
+      (verifyRefreshToken as jest.Mock).mockResolvedValue(null);
 
       await validateRefreshToken(req, res, next);
 
@@ -59,7 +59,7 @@ describe('Refresh Token Middleware', () => {
 
       // Mock verifyRefreshToken to return valid payload
       const mockPayload = { userId: '123', email: 'test@example.com', role: 'user', jti: 'refresh-jti' };
-      (verifyRefreshToken as jest.Mock).mockReturnValue(mockPayload);
+      (verifyRefreshToken as jest.Mock).mockResolvedValue(mockPayload);
 
       await validateRefreshToken(req, res, next);
 
@@ -76,9 +76,7 @@ describe('Refresh Token Middleware', () => {
       const next = jest.fn();
 
       // Mock verifyRefreshToken to throw an error
-      (verifyRefreshToken as jest.Mock).mockImplementation(() => {
-        throw new Error('Internal error');
-      });
+      (verifyRefreshToken as jest.Mock).mockRejectedValue(new Error('Internal error'));
 
       await validateRefreshToken(req, res, next);
 

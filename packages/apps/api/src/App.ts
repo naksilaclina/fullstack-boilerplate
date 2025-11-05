@@ -24,8 +24,13 @@ export default class App {
     this.express.set('trust proxy', 'loopback'); // Only trust loopback addresses
     this.express.use(compression());
     this.express.use(cookieParser());
+    // Parse multiple origins from environment variable or use default
+    const corsOrigins = process.env.CLIENT_URL ? 
+      process.env.CLIENT_URL.split(',').map(origin => origin.trim()) : 
+      ["http://localhost:3000"];
+      
     this.express.use(cors({
-      origin: process.env.CLIENT_URL || "http://localhost:3000",
+      origin: corsOrigins,
       credentials: true,
     }));
     this.express.use(securityMiddleware);

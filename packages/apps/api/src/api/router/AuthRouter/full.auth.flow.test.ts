@@ -51,7 +51,7 @@ describe('Full Authentication Flow', () => {
 
       // 3. Token Verification
       const decodedAccessToken = verifyAccessToken(accessToken);
-      const decodedRefreshToken = verifyRefreshToken(refreshToken);
+      const decodedRefreshToken = await verifyRefreshToken(refreshToken);
 
       // Verify tokens are valid
       expect(decodedAccessToken).not.toBeNull();
@@ -83,7 +83,7 @@ describe('Full Authentication Flow', () => {
       // 6. Token Refresh
       // Invalidate old refresh token
       if (decodedRefreshToken?.jti) {
-        invalidateRefreshToken(decodedRefreshToken.jti);
+        await invalidateRefreshToken(decodedRefreshToken.jti);
       }
 
       // Generate new tokens
@@ -95,7 +95,7 @@ describe('Full Authentication Flow', () => {
       expect(newRefreshToken).toBeDefined();
 
       // Verify old refresh token is invalidated
-      const verifiedOldToken = verifyRefreshToken(refreshToken);
+      const verifiedOldToken = await verifyRefreshToken(refreshToken);
       expect(verifiedOldToken).toBeNull();
 
       // 7. Session Revocation
@@ -138,7 +138,7 @@ describe('Full Authentication Flow', () => {
       expect(invalidTokenResult).toBeNull();
 
       // Test invalid refresh token verification
-      const invalidRefreshResult = verifyRefreshToken('invalid-refresh-token');
+      const invalidRefreshResult = await verifyRefreshToken('invalid-refresh-token');
       expect(invalidRefreshResult).toBeNull();
 
       // Test token invalidation with non-existent token

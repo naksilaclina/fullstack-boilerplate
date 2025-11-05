@@ -114,7 +114,7 @@ router.delete("/", authenticate, async (req: Request, res: Response) => {
     // Get current session ID if available
     let currentSessionId: string | null = null;
     if (refreshToken) {
-      const decoded = verifyRefreshToken(refreshToken);
+      const decoded = await verifyRefreshToken(refreshToken);
       if (decoded) {
         currentSessionId = decoded.jti;
       }
@@ -131,7 +131,7 @@ router.delete("/", authenticate, async (req: Request, res: Response) => {
     
     // Invalidate refresh tokens for all sessions being deleted
     for (const session of sessionsToRevoke) {
-      invalidateRefreshToken(session.refreshTokenId);
+      await invalidateRefreshToken(session.refreshTokenId);
     }
     
     // Delete all sessions except the current one

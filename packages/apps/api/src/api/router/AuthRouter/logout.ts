@@ -22,12 +22,12 @@ router.post("/", async (req: Request, res: Response) => {
     
     // If refresh token exists, invalidate the session
     if (refreshToken) {
-      const decoded = verifyRefreshToken(refreshToken);
+      const decoded = await verifyRefreshToken(refreshToken);
       if (decoded) {
         // Delete the session from database
         await SessionModel.deleteOne({ refreshTokenId: decoded.jti });
         // Invalidate the refresh token to prevent reuse
-        invalidateRefreshToken(decoded.jti);
+        await invalidateRefreshToken(decoded.jti);
       }
     }
 
