@@ -21,71 +21,125 @@ export default function RoleProtectedRoute({
 }: RoleProtectedRouteProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated } = useAuth();
-  // We're not using isCheckingAuth anymore since we're using the loading state from Redux
+  const { user, isAuthenticated, isLoading, isReady } = useAuth();
+
+  // Her render'da state'i logla
+  console.log('🔒 RoleProtectedRoute RENDER:', {
+    user: user ? { id: user.id, email: user.email, role: user.role } : null,
+    isAuthenticated,
+    isLoading,
+    isReady,
+    allowedRoles,
+    timestamp: new Date().toISOString()
+  });
+
+  // Terminal'de de görmek için
+  if (typeof window !== 'undefined') {
+    console.info('[CLIENT] 🔒 RoleProtectedRoute RENDER:', {
+      user: user ? { id: user.id, email: user.email, role: user.role } : null,
+      isAuthenticated,
+      isLoading,
+      isReady,
+      allowedRoles
+    });
+  }
 
   useEffect(() => {
-    console.log('RoleProtectedRoute checkAuth called with state:', {
-      user,
+    console.log('🔄 RoleProtectedRoute useEffect [AUTH CHECK]:', {
+      isReady,
       isAuthenticated,
+      shouldCheckAuth: !isReady && !isAuthenticated
+    });
+    
+    // Sadece ready olmadığında ve background validation yapmadığımızda çalıştır
+    if (!isReady && !isAuthenticated) {
+      console.log('🌐 RoleProtectedRoute: Dispatching checkAuthStatus...');
+      dispatch(checkAuthStatus());
+    }
+  }, [isReady, isAuthenticated, dispatch]);
+
+  useEffect(() => {
+    console.log('🔄 RoleProtectedRoute useEffect [PERMISSIONS CHECK]:', {
+      isReady,
+      isAuthenticated,
+      user: user ? { id: user.id, email: user.email, role: user.role } : null,
       allowedRoles
     });
 
-    const checkAuth = async () => {
-      // If user is not authenticated, try to check auth status with server
+    // Auth state hazır olduğunda kontrolleri yap
+    if (isReady) {
+      console.log('✅ RoleProtectedRoute: Auth state ready, checking permissions');
+
+      // Authenticated değilse login'e yönlendir
       if (!isAuthenticated) {
-        console.log('User not authenticated in RoleProtectedRoute, checking auth status with server');
-        try {
-          const result = await dispatch(checkAuthStatus());
-          if (checkAuthStatus.fulfilled.match(result)) {
-            // User is authenticated, no need to do anything else
-            console.log('User is authenticated');
-          } else if (checkAuthStatus.rejected.match(result)) {
-            // If checking auth status fails, redirect to login
-            console.log('Failed to check auth status in RoleProtectedRoute, redirecting to login');
-            router.push("/login");
-            return;
-          }
-        } catch (error) {
-          // If checking auth status fails, redirect to login
-          console.log('Failed to check auth status in RoleProtectedRoute, redirecting to login');
-          router.push("/login");
-          return;
-        }
+        console.log('❌ RoleProtectedRoute: User not authenticated, redirecting to login');
+        router.push("/login");
+        return;
       }
-      
-      // Check if user has the required role
-      // Type assertion to handle the Omit<User, "email"> type
-      if (user && !authorizationService.isRouteAccessible(user as User, allowedRoles)) {
+
+      // Role kontrolü yap
+      const isAccessible = authorizationService.isRouteAccessible(user as User, allowedRoles);
+      console.log('🔐 RoleProtectedRoute: Access check result:', {
+        user: user ? { role: user.role } : null,
+        allowedRoles,
+        isAccessible
+      });
+
+      if (user && !isAccessible) {
+        console.log('🚫 RoleProtectedRoute: Access denied, redirecting');
         toastService.error({
           message: "Access Denied",
           description: `You don't have permission to access this page. Your role is ${user.role}.`
         });
-        // Redirect to user's default page
         const redirectPath = authorizationService.getAccessDeniedRedirectPath(user as User);
         router.push(redirectPath);
         return;
       }
-    };
 
-    checkAuth();
-  }, [isAuthenticated, dispatch, user, allowedRoles, router]);
+      if (isAuthenticated && isAccessible) {
+        console.log('🎉 RoleProtectedRoute: All checks passed, rendering children');
+      }
+    }
+  }, [isReady, isAuthenticated, user, allowedRoles, router]);
 
-  // If user is not authenticated or doesn't have the required role, don't render children
-  console.log('RoleProtectedRoute rendering with state:', {
-    user,
-    isAuthenticated,
-    allowedRoles,
-    isAccessible: authorizationService.isRouteAccessible(user as User, allowedRoles)
-  });
-  
+  // Loading state'i göster
+  if (isLoading || !isReady) {
+    console.log('⏳ RoleProtectedRoute: Rendering loading state');
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Auth state hazır ama authenticated değil
   if (!isAuthenticated) {
-    return <div>Loading...</div>;
-  }
-  
-  if (!authorizationService.isRouteAccessible(user as User, allowedRoles)) {
-    return <div>Loading...</div>;
+    console.log('🔄 RoleProtectedRoute: Rendering redirect to login state');
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
+  // Role kontrolü
+  if (!authorizationService.isRouteAccessible(user as User, allowedRoles)) {
+    console.log('🚫 RoleProtectedRoute: Rendering access denied state');
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">Access denied. Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Her şey tamam, children'ı render et
+  console.log('🎯 RoleProtectedRoute: Rendering children - SUCCESS!');
   return <>{children}</>;
 }

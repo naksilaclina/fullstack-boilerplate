@@ -13,6 +13,8 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
+  initializing: boolean;        // Uygulama başlarken true
+  backgroundValidating: boolean; // Background validation için
   error: string | null;
 }
 
@@ -20,6 +22,8 @@ const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   loading: false,
+  initializing: true,           // Uygulama başlarken true
+  backgroundValidating: false,  // Background validation için
   error: null
 };
 
@@ -44,12 +48,16 @@ export const authSlice = createSlice({
       state.user = action.payload.user;
       state.isAuthenticated = true;
       state.loading = false;
+      state.initializing = false;        // Auth tamamlandı
+      state.backgroundValidating = false; // Background validation bitti
       state.error = null;
     },
     clearUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
       state.loading = false;
+      state.initializing = false;        // Auth tamamlandı
+      state.backgroundValidating = false; // Background validation bitti
       state.error = null;
     },
     // Initialize auth state by checking with the backend
@@ -63,13 +71,20 @@ export const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.loading = false;
+      state.initializing = false;        // Auth tamamlandı
+      state.backgroundValidating = false; // Background validation bitti
       state.error = null;
     }
   },
   extraReducers: (builder) => {
     builder
       .addCase(checkAuthStatus.pending, (state) => {
-        state.loading = true;
+        // İlk yükleme mi yoksa background validation mı?
+        if (state.initializing) {
+          state.loading = true;
+        } else {
+          state.backgroundValidating = true;
+        }
         state.error = null;
       })
       .addCase(checkAuthStatus.fulfilled, (state, action) => {
@@ -82,12 +97,16 @@ export const authSlice = createSlice({
         };
         state.isAuthenticated = true;
         state.loading = false;
+        state.initializing = false;        // Auth tamamlandı
+        state.backgroundValidating = false; // Background validation bitti
         state.error = null;
       })
       .addCase(checkAuthStatus.rejected, (state, action) => {
         state.user = null;
         state.isAuthenticated = false;
         state.loading = false;
+        state.initializing = false;        // Auth tamamlandı (başarısız)
+        state.backgroundValidating = false; // Background validation bitti
         state.error = action.payload as string || 'Failed to check auth status';
       });
   },

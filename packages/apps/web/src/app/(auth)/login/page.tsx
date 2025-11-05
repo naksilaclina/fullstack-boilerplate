@@ -76,7 +76,10 @@ export default function LoginPage() {
       // Get full user profile
       const userProfile = await getProfile();
       login(userProfile);
-      
+
+      // State'in güncellenmesini bekle
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       toastService.success({
         message: "Login Successful",
         description: "Welcome back! You have been successfully logged in."
@@ -127,6 +130,9 @@ export default function LoginPage() {
       // Get full user profile
       const userProfile = await getProfile();
       login(userProfile);
+
+      // State'in güncellenmesini bekle
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       toastService.success({
         message: "Login Successful",
