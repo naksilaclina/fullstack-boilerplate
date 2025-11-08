@@ -24,11 +24,11 @@ export default function RoleProtectedRoute({
   const { user, isAuthenticated, isLoading, isReady } = useAuth();
 
   useEffect(() => {
-    // Sadece ready olmadığında ve background validation yapmadığımızda çalıştır
-    if (!isReady && !isAuthenticated) {
+    // Only dispatch if not already loading/initializing and not authenticated
+    if (!isReady && !isAuthenticated && !isLoading) {
       dispatch(checkAuthStatus());
     }
-  }, [isReady, isAuthenticated, dispatch]);
+  }, [isReady, isAuthenticated, isLoading, dispatch]);
 
   useEffect(() => {
     // Auth state hazır olduğunda kontrolleri yap

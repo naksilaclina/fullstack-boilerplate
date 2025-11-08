@@ -41,6 +41,11 @@ export class SessionMonitoringService {
    * Start automatic session monitoring and cleanup
    */
   public startMonitoring(): void {
+    // Prevent duplicate initialization
+    if (this.cleanupInterval || this.monitoringInterval) {
+      return;
+    }
+
     // Cleanup expired sessions every hour
     this.cleanupInterval = setInterval(async () => {
       try {

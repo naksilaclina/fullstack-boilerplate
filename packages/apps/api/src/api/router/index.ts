@@ -6,6 +6,7 @@ import UsersRouter from "./UsersRouter";
 import AdminRouter from "./AdminRouter";
 import AuthRouter from "./AuthRouter";
 import SessionRouter from "./SessionRouter/SessionRouter";
+import SecurityRouter from "./SecurityRouter";
 
 const router = Router();
 
@@ -13,6 +14,7 @@ router.use("/auth", AuthRouter);
 router.use("/sessions", SessionRouter);
 router.use("/users", UsersRouter);
 router.use("/admin", AdminRouter);
+router.use("/security", SecurityRouter);
 
 // Health check endpoint
 router.get("/ping", (req, res) => {

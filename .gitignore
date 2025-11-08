@@ -14,6 +14,14 @@ web-build/
 .env
 .terraform/
 
+# Build outputs
+*.js.map
+*.d.ts
+*.d.ts.map
+config/*.js
+.next/
+.turbo/
+
 *.png
 *.jpeg
 *.jpg

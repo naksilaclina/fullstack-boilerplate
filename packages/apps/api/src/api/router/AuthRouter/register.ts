@@ -9,9 +9,11 @@ import { authRateLimiter } from "~api/middlewares";
 const router = Router();
 const SALT_ROUNDS = 10;
 
+import { isDevelopment, isProduction } from "../../../config";
+
 // Helper function for conditional logging
 const devLog = (...args: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (isDevelopment) {
     console.log(...args);
   }
 };
@@ -73,7 +75,7 @@ router.post(
       // Set refresh token in HTTP-only cookie
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
@@ -92,7 +94,7 @@ router.post(
         accessToken,
       });
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
+      if (isDevelopment) {
         console.error("Registration error:", error);
       }
       return res.status(500).json({

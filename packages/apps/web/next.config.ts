@@ -1,13 +1,29 @@
 import type { NextConfig } from "next";
-import dotenv from "dotenv";
-import path from "path";
+import { getClientConfig } from "../../../config/client";
 
-// Load environment variables from root .env file
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+// Get server-side configuration
+const serverConfig = getClientConfig();
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
+  
+  // Environment variables to expose to the client
+  env: {
+    NEXT_PUBLIC_API_BASE_URL: serverConfig.api.baseUrl,
+    NEXT_PUBLIC_NODE_ENV: serverConfig.nodeEnv,
+    NEXT_PUBLIC_ENABLE_DEBUG: serverConfig.features.enableDebugRoutes.toString(),
+    NEXT_PUBLIC_ENABLE_MOCKS: serverConfig.features.enableMockServices.toString(),
+    NEXT_PUBLIC_SENTRY_DSN: serverConfig.monitoring.sentryDsn || '',
+    NEXT_PUBLIC_AUTH_URL: serverConfig.auth.nextAuthUrl || '',
+  },
+  
+  experimental: {
+    optimizeCss: serverConfig.nodeEnv === 'production',
+  },
+  
+  compress: serverConfig.nodeEnv === 'production',
+  poweredByHeader: false, // Security: hide X-Powered-By header
+  generateEtags: serverConfig.nodeEnv === 'production',
   
   // Security headers for production
   async headers() {
@@ -33,9 +49,9 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: process.env.NODE_ENV === 'production' 
+            value: serverConfig.nodeEnv === 'production' 
               ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:; frame-ancestors 'none';"
-              : `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' ${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:5000'} https:; frame-ancestors 'none';`
+              : `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' ${serverConfig.api.baseUrl.replace('/api/v1', '')} https:; frame-ancestors 'none';`
           }
         ]
       }
@@ -44,11 +60,11 @@ const nextConfig: NextConfig = {
   
   // HTTPS redirects only for production
   async redirects() {
-    return process.env.NODE_ENV === 'production' ? [
+    return serverConfig.nodeEnv === 'production' ? [
       {
         source: '/(.*)',
         has: [{ type: 'header', key: 'x-forwarded-proto', value: 'http' }],
-        destination: 'https://yourdomain.com/:path*',
+        destination: `https://${process.env.WEB_HOST}/:path*`,
         permanent: true
       }
     ] : [];

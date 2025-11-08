@@ -30,7 +30,14 @@ const initialState: AuthState = {
 // Async thunk to check auth status with backend
 export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
+    const state = getState() as { auth: AuthState };
+    
+    // Prevent duplicate calls if already loading or validating
+    if (state.auth.loading || state.auth.backgroundValidating) {
+      return rejectWithValue('Auth check already in progress');
+    }
+    
     try {
       const profile = await getProfile();
       return profile;

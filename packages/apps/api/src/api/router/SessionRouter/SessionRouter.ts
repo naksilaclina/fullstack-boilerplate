@@ -21,9 +21,11 @@ import {
 
 const router = Router();
 
+import { isDevelopment, isProduction } from "../../../config";
+
 // Helper function for conditional logging
 const devLog = (...args: any[]) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
         console.log(...args);
     }
 };
@@ -151,7 +153,7 @@ router.post("/refresh", async (req: Request, res: Response) => {
         // Set new refresh token cookie
         res.cookie('refreshToken', newRefreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: isProduction,
             sameSite: 'strict',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });

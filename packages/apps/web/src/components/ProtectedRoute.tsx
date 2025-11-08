@@ -21,21 +21,18 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated } = useAuth();
-  // We're not using isCheckingAuth anymore since we're using the loading state from Redux
+  const { user, isAuthenticated, loading, initializing } = useAuth();
 
   useEffect(() => {
     const checkAuth = async () => {
-      // If user is not authenticated, try to check auth status with server
-      if (!isAuthenticated) {
+      // Only check auth if we're not already loading and not authenticated
+      if (!isAuthenticated && !loading && !initializing) {
         try {
           const result = await dispatch(checkAuthStatus());
-          if (checkAuthStatus.fulfilled.match(result)) {
-            // User is authenticated, no need to do anything else
-          } else if (checkAuthStatus.rejected.match(result)) {
+          if (checkAuthStatus.rejected.match(result)) {
             // If checking auth status fails, redirect to login
             toastService.error({
-              message: "Authentication Required",
+              message: "Authentication Required", 
               description: "Please log in to access this page.",
             });
             router.push("/login");
@@ -67,7 +64,7 @@ export default function ProtectedRoute({
     };
 
     checkAuth();
-  }, [isAuthenticated, dispatch, router, user, allowedRoles]);
+  }, [isAuthenticated, loading, initializing, dispatch, router, user, allowedRoles]);
 
   // If user is not authenticated, don't render children
   

@@ -1,5 +1,5 @@
 /* eslint-disable import/first */
-require("dotenv").config({ path: "../../.env" }); // eslint-disable-line
+// Environment variables are already loaded by the parent process
 
 import "../src/moduleAliases";
 import App from "../src/App";

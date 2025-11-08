@@ -12,9 +12,11 @@ interface MonitoringOptions {
 /**
  * Safe request monitoring middleware
  */
+import { isDevelopment } from "../../config";
+
 export function monitoringMiddleware(options: MonitoringOptions = {}) {
   const {
-    logRequests = process.env.NODE_ENV === 'development',
+    logRequests = isDevelopment,
     performanceTracking = true
   } = options;
 
@@ -25,7 +27,8 @@ export function monitoringMiddleware(options: MonitoringOptions = {}) {
     // Add request ID to request object for tracking
     (req as any).requestId = requestId;
 
-    if (logRequests) {
+    // Only log non-auth requests to reduce noise
+    if (logRequests && !req.url.includes('/auth/profile')) {
       console.log('API Request:', {
         requestId,
         method: req.method,
@@ -61,14 +64,18 @@ export function monitoringMiddleware(options: MonitoringOptions = {}) {
             responseTime: `${responseTime}ms`
           });
         } else if (res.statusCode >= 400) {
-          console.warn('API Client Error:', {
-            requestId,
-            method: req.method,
-            path: req.path,
-            statusCode: res.statusCode,
-            responseTime: `${responseTime}ms`
-          });
-        } else if (logRequests) {
+          // Only log client errors if they're not auth-related 401s (too noisy)
+          if (res.statusCode !== 401) {
+            console.warn('API Client Error:', {
+              requestId,
+              method: req.method,
+              path: req.path,
+              statusCode: res.statusCode,
+              responseTime: `${responseTime}ms`
+            });
+          }
+        } else if (logRequests && responseTime > 100) {
+          // Only log successful requests if they take more than 100ms
           console.log('API Success:', {
             requestId,
             method: req.method,

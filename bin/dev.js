@@ -2,11 +2,11 @@ const { spawn } = require('child_process');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-console.log('Starting development environment...');
+console.log('🚀 Starting Monorepo Development Environment...');
 
-// Use centralized port configurations
-const backendPort = process.env.BACKEND_PORT || 5000;
-const frontendPort = process.env.FRONTEND_PORT || 3000;
+// Use centralized port configurations from monorepo config
+const backendPort = process.env.API_PORT || 5000;
+const frontendPort = process.env.WEB_PORT || 3000;
 
 // Start the API server with its own environment variables
 const apiProcess = spawn('npm', ['run', 'dev', '--workspace=@naksilaclina/api'], {

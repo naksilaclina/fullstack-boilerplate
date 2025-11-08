@@ -29,9 +29,11 @@ const getClientIP = (req: Request): string => {
   return req.ip;
 };
 
+import { isDevelopment, isProduction } from "../../../config";
+
 // Helper function for conditional logging
 const devLog = (...args: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (isDevelopment) {
     console.log(...args);
   }
 };
@@ -133,7 +135,7 @@ router.post(
       devLog("Setting refresh token cookie", { email, userId: user._id });
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
@@ -143,7 +145,7 @@ router.post(
       devLog("Setting access token cookie", { email, userId: user._id });
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "strict",
         maxAge: 15 * 60 * 1000, // 15 minutes
         path: "/",
@@ -167,7 +169,7 @@ router.post(
         },
       });
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
+      if (isDevelopment) {
         console.error("Login error:", error);
       }
       return res.status(500).json({

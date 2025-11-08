@@ -1,7 +1,10 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-console.log('Starting production environment...');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+console.log('🚀 Starting Monorepo Production Environment...');
 
 // Start the API server with its own environment variables
 const apiProcess = spawn('npm', ['run', 'start', '--workspace=@naksilaclina/api'], {

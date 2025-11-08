@@ -21,9 +21,15 @@
     "security-check": "npm run security-audit && npm run lint",
     "security-full-audit": "node scripts/security-audit.js",
     "security-snyk": "npx snyk test",
-    "security-comprehensive": "npm run security-full-audit && npm run security-snyk && npm audit"
+    "security-comprehensive": "npm run security-full-audit && npm run security-snyk && npm audit",
+    "test-config": "node scripts/test-config.js",
+    "validate-config": "node scripts/validate-config.js",
+    "validate-env": "npx tsc --project tsconfig.json && npm run test-config",
+    "build-config": "npx tsc --project tsconfig.json",
+    "clean": "node scripts/clean.js"
   },
   "devDependencies": {
+    "@types/joi": "^17.2.2",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.49.0",
     "@typescript-eslint/parser": "^5.49.0",
@@ -35,7 +41,9 @@
     "eslint-config-standard-with-typescript": "^34.0.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-security": "^3.0.1",
+    "joi": "^18.0.1",
     "prettier": "^2.8.3",
+    "rimraf": "^6.1.0",
     "typescript": "^4.9.5"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 {
   "include": ["src/**/*", "bin/**/*"],
+  "exclude": ["node_modules", "dist", "../../config/**/*"],
 
   "ts-node": {
     "require": ["tsconfig-paths/register"]

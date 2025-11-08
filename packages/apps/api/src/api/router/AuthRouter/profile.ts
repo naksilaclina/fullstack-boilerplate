@@ -4,9 +4,11 @@ import { authenticate } from "~api/middlewares";
 
 const router = Router();
 
+import { isDevelopment } from "../../../config";
+
 // Helper function for conditional logging
 const devLog = (...args: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (isDevelopment) {
     console.log(...args);
   }
 };
@@ -43,7 +45,7 @@ router.get("/", authenticate, async (req: Request, res: Response) => {
       role: user.role,
     });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
       console.error("Profile error:", error);
     }
     return res.status(500).json({

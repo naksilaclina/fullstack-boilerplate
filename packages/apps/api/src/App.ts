@@ -8,7 +8,7 @@ import {
   connect as connectToMongodb,
 } from "@naksilaclina/mongodb";
 
-import { port, mongodbUri } from "./config";
+import { port, mongodbUri, config } from "./config";
 import { api } from "./api";
 import { securityMiddleware, generalRateLimiter } from "./api/middlewares";
 import { monitoringMiddleware } from "./api/middlewares/monitoring.middleware";
@@ -29,10 +29,8 @@ export default class App {
     this.express.set('trust proxy', 'loopback'); // Only trust loopback addresses
     this.express.use(compression());
     this.express.use(cookieParser());
-    // Parse multiple origins from environment variable or use default
-    const corsOrigins = process.env.CLIENT_URL ? 
-      process.env.CLIENT_URL.split(',').map(origin => origin.trim()) : 
-      ["http://localhost:3000"];
+    // Get CORS origins from centralized config
+    const corsOrigins = config.security.corsOrigins;
       
     this.express.use(cors({
       origin: corsOrigins,
@@ -41,7 +39,7 @@ export default class App {
     
     // Add monitoring middleware first (for request tracking)
     this.express.use(monitoringMiddleware({
-      logRequests: process.env.NODE_ENV === 'development',
+      logRequests: config.nodeEnv === 'development',
       performanceTracking: true
     }));
     

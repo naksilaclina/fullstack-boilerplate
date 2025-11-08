@@ -1,15 +1,13 @@
-import dotenv from "dotenv";
-dotenv.config({ path: "../../../.env" });
-
 import { hash } from "bcrypt";
 import mongoose from "mongoose";
 import { UserModel } from "../entities";
+import { config, isDevelopment } from "../config";
 
-// Use environment variables for MongoDB URIs
-const mongodbUri = process.env.MONGODB_URI ?? "mongodb://localhost:27017/naksilaclina-dev";
-const mongodbDevUri = process.env.MONGODB_DEV_URI ?? "mongodb://127.0.0.1:27017/naksilaclina-dev";
+// Use centralized configuration
+const mongodbUri = config.database.uri;
+const mongodbDevUri = config.database.devUri;
 
-console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("NODE_ENV:", config.nodeEnv);
 
 const SALT_ROUNDS = 10;
 
@@ -24,28 +22,37 @@ async function seedUsers(maxRetries = 5, retryDelay = 2000) {
       // In development, connect to the Memory Server using environment variable
       let connection;
       let uri;
-      if (process.env.NODE_ENV === "development") {
+      if (isDevelopment) {
         try {
           // Use the development MongoDB URI from environment variables
           uri = mongodbDevUri;
+          if (!uri) {
+            throw new Error("Development URI not available");
+          }
           console.log("Using MongoDB Memory Server for seeding (from env):", uri);
           connection = await mongoose.connect(uri);
         } catch (error) {
           console.log("Failed to connect to MongoDB Memory Server, using provided URI:", mongodbUri);
           uri = mongodbUri;
-          connection = await mongoose.connect(mongodbUri);
+          if (!uri) {
+            throw new Error("MongoDB URI is required");
+          }
+          connection = await mongoose.connect(uri);
         }
       } else {
         // In production, use the provided URI
         uri = mongodbUri;
-        connection = await mongoose.connect(mongodbUri);
+        if (!uri) {
+          throw new Error("MongoDB URI is required");
+        }
+        connection = await mongoose.connect(uri);
       }
       
       console.log("Connected to MongoDB");
 
       // Check if users already exist
       const userCount = await UserModel.countDocuments();
-      if (userCount > 0 && process.env.FORCE_SEED !== "true") {
+      if (userCount > 0 && !config.features.forceSeed) {
         console.log(`Database already contains ${userCount} users. Skipping seeding.`);
         console.log("To force seeding, set FORCE_SEED=true environment variable.");
         await mongoose.disconnect();
@@ -53,7 +60,7 @@ async function seedUsers(maxRetries = 5, retryDelay = 2000) {
       }
 
       // Clear existing users only if forced
-      if (process.env.FORCE_SEED === "true") {
+      if (config.features.forceSeed) {
         console.log("Clearing existing users (forced)...");
         await UserModel.deleteMany({});
         console.log("Cleared existing users");

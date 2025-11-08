@@ -1,36 +1,148 @@
 import { Request, Response, NextFunction } from "express";
 import { rateLimit } from "express-rate-limit";
 import helmet from "helmet";
+import { config } from "../../config";
+
+/**
+ * Advanced OWASP Security Headers Configuration
+ */
+const advancedHelmetConfig = {
+  // Content Security Policy - Prevents XSS attacks
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'", // Required for some CSS frameworks
+        "https://fonts.googleapis.com"
+      ],
+      scriptSrc: ["'self'"],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https:",
+        "blob:" // For uploaded images
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com"
+      ],
+      connectSrc: [
+        "'self'",
+        // Add your API domains here
+        ...(config.nodeEnv === 'development' ? ['http://localhost:*'] : [])
+      ],
+      frameSrc: ["'none'"], // Prevent embedding in frames
+      objectSrc: ["'none'"], // Prevent object/embed/applet
+      mediaSrc: ["'self'"],
+      manifestSrc: ["'self'"],
+      workerSrc: ["'self'"],
+      ...(config.nodeEnv === 'production' && { upgradeInsecureRequests: [] })
+    },
+    reportOnly: config.security.csp.reportOnly,
+    reportUri: config.security.csp.reportUri
+  },
+
+  // HTTP Strict Transport Security - Forces HTTPS
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
+
+  // X-Frame-Options - Prevents clickjacking
+  frameguard: {
+    action: 'deny' as const
+  },
+
+  // X-Content-Type-Options - Prevents MIME sniffing
+  noSniff: true,
+
+  // Referrer Policy - Controls referrer information
+  referrerPolicy: {
+    policy: 'strict-origin-when-cross-origin' as const
+  },
+
+  // X-XSS-Protection - Legacy XSS protection (deprecated but still useful)
+  xssFilter: true,
+
+  // X-DNS-Prefetch-Control - Controls DNS prefetching
+  dnsPrefetchControl: {
+    allow: false
+  },
+
+  // X-Download-Options - Prevents IE from executing downloads
+  ieNoOpen: true,
+
+  // X-Permitted-Cross-Domain-Policies - Controls Flash/PDF cross-domain
+  permittedCrossDomainPolicies: {
+    permittedPolicies: 'none' as const
+  },
+
+  // Hide X-Powered-By header
+  hidePoweredBy: true
+};
 
 /**
  * Security middleware to apply various security headers and protections
  */
 export function securityMiddleware(req: Request, res: Response, next: NextFunction) {
-  // Apply helmet middleware for security headers
-  helmet()(req, res, () => {
-    // Additional custom security headers
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("X-XSS-Protection", "1; mode=block");
-    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
-    
+  // Apply advanced helmet middleware for comprehensive security headers
+  helmet(advancedHelmetConfig)(req, res, () => {
+
+    // Additional modern security headers
+    res.setHeader("Permissions-Policy", [
+      "geolocation=()",
+      "microphone=()",
+      "camera=()",
+      "payment=()",
+      "usb=()",
+      "magnetometer=()",
+      "gyroscope=()",
+      "speaker=()",
+      "fullscreen=(self)",
+      "sync-xhr=()"
+    ].join(", "));
+
+    // Cross-Origin Embedder Policy
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+
+    // Cross-Origin Opener Policy
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+
+    // Cross-Origin Resource Policy
+    res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+
+    // Server information hiding
+    res.removeHeader("X-Powered-By");
+    res.removeHeader("Server");
+
     // CSRF Protection via SameSite cookies (already implemented in auth routes)
     // Additional CSRF header check for API requests
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
       const origin = req.get('Origin');
       const referer = req.get('Referer');
-      const allowedOrigins = process.env.CLIENT_URL ? 
-        process.env.CLIENT_URL.split(',').map(url => url.trim()) : 
-        ['http://localhost:3000'];
-      
-      // Basic CSRF protection by checking origin/referer
+      const allowedOrigins = config.security.corsOrigins;
+
+      // Enhanced CSRF protection by checking origin/referer
       if (origin && !allowedOrigins.includes(origin)) {
-        console.warn('CSRF Warning: Invalid origin', { origin, method: req.method, path: req.path });
+        console.warn('CSRF Warning: Invalid origin', {
+          origin,
+          method: req.method,
+          path: req.path,
+          userAgent: req.get('User-Agent'),
+          ip: req.ip
+        });
+
+        // In production, you might want to reject the request
+        if (config.nodeEnv === 'production') {
+          return res.status(403).json({
+            error: 'Forbidden: Invalid origin'
+          });
+        }
       }
     }
-    
+
     next();
   });
 }
@@ -39,8 +151,8 @@ export function securityMiddleware(req: Request, res: Response, next: NextFuncti
  * Rate limiter for authentication endpoints to prevent brute force attacks
  */
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs for login
+  windowMs: config.security.rateLimiting.windowMs,
+  max: config.security.rateLimiting.authMaxRequests,
   message: {
     error: "Too many login attempts, please try again later."
   },
@@ -53,8 +165,8 @@ export const authRateLimiter = rateLimit({
  * Rate limiter for general API endpoints
  */
 export const generalRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: config.security.rateLimiting.windowMs,
+  max: config.security.rateLimiting.maxRequests,
   message: {
     error: "Too many requests, please try again later."
   },

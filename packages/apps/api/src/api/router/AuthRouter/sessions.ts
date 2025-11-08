@@ -5,9 +5,11 @@ import { verifyRefreshToken, invalidateRefreshToken } from "~api/services/auth/j
 
 const router = Router();
 
+import { isDevelopment } from "../../../config";
+
 // Helper function for conditional logging
 const devLog = (...args: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (isDevelopment) {
     console.log(...args);
   }
 };
@@ -44,7 +46,7 @@ router.get("/", authenticate, async (req: Request, res: Response) => {
       sessions: sessionData,
     });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
       console.error("Sessions error:", error);
     }
     return res.status(500).json({
@@ -87,7 +89,7 @@ router.delete("/:id", authenticate, async (req: Request, res: Response) => {
       message: "Session revoked successfully",
     });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
       console.error("Session revoke error:", error);
     }
     return res.status(500).json({
@@ -141,7 +143,7 @@ router.delete("/", authenticate, async (req: Request, res: Response) => {
       message: "All sessions revoked successfully",
     });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
       console.error("Sessions revoke error:", error);
     }
     return res.status(500).json({

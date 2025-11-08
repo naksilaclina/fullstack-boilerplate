@@ -3,9 +3,11 @@ import { IUserDocument, SessionModel } from "@naksilaclina/mongodb";
 import { jwtSecret, jwtRefreshSecret } from "~config";
 import crypto from "crypto";
 
+import { isDevelopment } from "~config";
+
 // Validate that secrets are properly configured
-const JWT_SECRET = jwtSecret || (process.env.NODE_ENV === 'development' ? 'dev-jwt-secret-change-in-production-32chars' : '');
-const JWT_REFRESH_SECRET = jwtRefreshSecret || (process.env.NODE_ENV === 'development' ? 'dev-jwt-refresh-secret-change-in-production-32chars' : '');
+const JWT_SECRET = jwtSecret || (isDevelopment ? 'dev-jwt-secret-change-in-production-32chars' : '');
+const JWT_REFRESH_SECRET = jwtRefreshSecret || (isDevelopment ? 'dev-jwt-refresh-secret-change-in-production-32chars' : '');
 
 if (!JWT_SECRET) {
   const errorMessage = "JWT_SECRET is not configured. Please set it in your environment variables.";

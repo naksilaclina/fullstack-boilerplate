@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { isProduction } from "../../config";
 
 /**
  * Simple session validation middleware
@@ -22,9 +23,10 @@ export function sessionTrackingMiddleware(req: SessionRequest, res: Response, ne
 
   // Set session cookie if not exists
   if (!req.cookies?.sessionId) {
+
     res.cookie('sessionId', sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'strict', // Enhanced CSRF protection
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });

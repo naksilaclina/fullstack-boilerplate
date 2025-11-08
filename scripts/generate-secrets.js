@@ -1,106 +1,126 @@
+#!/usr/bin/env node
+
+/**
+ * Monorepo Secret Generator
+ * Generates secure random secrets for JWT tokens and other sensitive configurations
+ */
+
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-// Function to generate cryptographically secure random string
-function generateSecureSecret(length = 64) {
-  // Ensure minimum length for security
-  if (length < 32) {
-    throw new Error('Secret length must be at least 32 characters for security');
-  }
+/**
+ * Generate a cryptographically secure random string
+ */
+function generateSecret(length = 64) {
   return crypto.randomBytes(length).toString('hex');
 }
 
-// Function to update .env file with new secrets
-function updateEnvFile(envPath, secrets) {
+/**
+ * Generate all required secrets
+ */
+function generateSecrets() {
+  const secrets = {
+    JWT_SECRET: generateSecret(32), // 64 hex chars = 32 bytes
+    JWT_REFRESH_SECRET: generateSecret(32),
+    NEXTAUTH_SECRET: generateSecret(16), // 32 hex chars = 16 bytes
+    MONGODB_ENCRYPTION_KEY: generateSecret(32),
+  };
+
+  return secrets;
+}
+
+/**
+ * Update .env file with generated secrets
+ */
+function updateEnvFile(secrets) {
+  const envPath = path.join(__dirname, '..', '.env');
+  const envExamplePath = path.join(__dirname, '..', '.env.example');
+
   let envContent = '';
-  
-  // Read existing .env file if it exists
-  if (fs.existsSync(envPath)) {
+
+  // Check if .env exists, if not copy from .env.example
+  if (!fs.existsSync(envPath)) {
+    if (fs.existsSync(envExamplePath)) {
+      console.log('📋 Creating .env from .env.example...');
+      envContent = fs.readFileSync(envExamplePath, 'utf8');
+    } else {
+      console.error('❌ Neither .env nor .env.example found!');
+      process.exit(1);
+    }
+  } else {
     envContent = fs.readFileSync(envPath, 'utf8');
   }
-  
-  // Update or add secrets
-  for (const [key, value] of Object.entries(secrets)) {
+
+  // Replace placeholder secrets with generated ones
+  Object.entries(secrets).forEach(([key, value]) => {
     const regex = new RegExp(`^${key}=.*$`, 'm');
-    const secretLine = `${key}=${value}`;
+    const replacement = `${key}=${value}`;
     
-    if (envContent.match(regex)) {
-      // Replace existing secret
-      envContent = envContent.replace(regex, secretLine);
+    if (regex.test(envContent)) {
+      envContent = envContent.replace(regex, replacement);
+      console.log(`✅ Updated ${key}`);
     } else {
-      // Add new secret
-      envContent += `\n${secretLine}`;
+      // Add the secret if it doesn't exist
+      envContent += `\n${replacement}`;
+      console.log(`➕ Added ${key}`);
     }
-  }
-  
-  // Write updated content back to .env file
-  fs.writeFileSync(envPath, envContent.trim() + '\n');
-  console.log(`Updated secrets in ${envPath}`);
+  });
+
+  // Write updated content back to .env
+  fs.writeFileSync(envPath, envContent);
+  console.log(`💾 Secrets saved to ${envPath}`);
 }
 
-// Function to update .env.example file
-function updateEnvExample(envExamplePath) {
-  let envExampleContent = '';
+/**
+ * Display security recommendations
+ */
+function showSecurityRecommendations() {
+  console.log('\n🔒 Security Recommendations:');
+  console.log('================================');
+  console.log('1. Never commit .env file to version control');
+  console.log('2. Use different secrets for each environment');
+  console.log('3. Rotate secrets regularly in production');
+  console.log('4. Store production secrets in secure vault');
+  console.log('5. Enable SSL/TLS in production');
+  console.log('6. Configure proper CORS origins');
+  console.log('7. Set up monitoring and alerting');
+  console.log('\n📚 Next Steps:');
+  console.log('- Review and update MONGODB_URI with your credentials');
+  console.log('- Set CLIENT_URL to your actual domain(s)');
+  console.log('- Configure SSL certificates for production');
+  console.log('- Set up monitoring services (Sentry, DataDog)');
+}
+
+/**
+ * Main execution
+ */
+function main() {
+  console.log('🔐 Monorepo Secret Generator');
+  console.log('============================');
   
-  // Read existing .env.example file if it exists
-  if (fs.existsSync(envExamplePath)) {
-    envExampleContent = fs.readFileSync(envExamplePath, 'utf8');
-  }
-  
-  // Define secret keys to ensure they exist in .env.example
-  const secretKeys = [
-    'JWT_SECRET',
-    'JWT_REFRESH_SECRET'
-  ];
-  
-  for (const key of secretKeys) {
-    const regex = new RegExp(`^${key}=.*$`, 'm');
-    const exampleLine = `${key}=your-${key.toLowerCase().replace(/_/g, '-')}-here`;
+  try {
+    const secrets = generateSecrets();
     
-    if (!envExampleContent.match(regex)) {
-      // Add example secret line
-      envExampleContent += `\n${exampleLine}`;
-    }
+    console.log('🎲 Generated secure secrets:');
+    Object.keys(secrets).forEach(key => {
+      console.log(`- ${key}: ${secrets[key].substring(0, 8)}...`);
+    });
+    
+    updateEnvFile(secrets);
+    showSecurityRecommendations();
+    
+    console.log('\n🎉 Secret generation completed successfully!');
+    
+  } catch (error) {
+    console.error('❌ Error generating secrets:', error.message);
+    process.exit(1);
   }
-  
-  // Write updated content back to .env.example file
-  fs.writeFileSync(envExamplePath, envExampleContent.trim() + '\n');
-  console.log(`Updated .env.example at ${envExamplePath}`);
 }
 
-// Generate secure secrets (64 bytes = 128 hex characters for strong security)
-const jwtSecret = generateSecureSecret(64);
-const refreshTokenSecret = generateSecureSecret(64);
-
-// Validate secrets meet minimum security requirements
-if (jwtSecret.length < 64) {
-  console.error('❌ Generated JWT_SECRET is too short');
-  process.exit(1);
+// Run if called directly
+if (require.main === module) {
+  main();
 }
 
-if (refreshTokenSecret.length < 64) {
-  console.error('❌ Generated JWT_REFRESH_SECRET is too short');
-  process.exit(1);
-}
-
-const secrets = {
-  JWT_SECRET: jwtSecret,
-  JWT_REFRESH_SECRET: refreshTokenSecret
-};
-
-console.log('Generated secure secrets:');
-console.log('JWT_SECRET:', jwtSecret);
-console.log('JWT_REFRESH_SECRET:', refreshTokenSecret);
-
-// Update root .env file
-const rootEnvPath = path.join(__dirname, '..', '.env');
-updateEnvFile(rootEnvPath, secrets);
-
-// Update root .env.example file
-const rootEnvExamplePath = path.join(__dirname, '..', '.env.example');
-updateEnvExample(rootEnvExamplePath);
-
-console.log('\n✅ Secret generation completed successfully!');
-console.log('🔐 Secrets have been updated in the root .env file.');
-console.log('⚠️  Remember to add .env files to your .gitignore to prevent exposing secrets!');
+module.exports = { generateSecrets, updateEnvFile };

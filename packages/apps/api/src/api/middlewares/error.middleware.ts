@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { isProduction } from "../../config";
 
 /**
  * Development-friendly error handling middleware
@@ -28,14 +29,14 @@ export const errorHandler = (
   });
 
   const statusCode = err.statusCode || 500;
-  
+
   // Always return JSON for API consistency
   const errorResponse = {
-    error: process.env.NODE_ENV === 'production' 
+    error: isProduction 
       ? (statusCode >= 500 ? 'Internal server error' : err.message)
       : err.message,
     timestamp: new Date().toISOString(),
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    ...(!isProduction && { stack: err.stack })
   };
 
   res.status(statusCode).json(errorResponse);

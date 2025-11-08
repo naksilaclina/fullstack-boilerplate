@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
+import { config } from '../config';
+
+const API_BASE_URL = config.api.baseUrl;
 
 /**
  * Refresh access token using refresh token

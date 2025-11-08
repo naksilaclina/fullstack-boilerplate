@@ -4,9 +4,11 @@ import { verifyRefreshToken, invalidateRefreshToken } from "~api/services/auth/j
 
 const router = Router();
 
+import { isDevelopment, isProduction } from "../../../config";
+
 // Helper function for conditional logging
 const devLog = (...args: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (isDevelopment) {
     console.log(...args);
   }
 };
@@ -34,7 +36,7 @@ router.post("/", async (req: Request, res: Response) => {
     // Clear the refresh token cookie
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       sameSite: "strict",
       path: "/",
     });
@@ -42,7 +44,7 @@ router.post("/", async (req: Request, res: Response) => {
     // Clear the access token cookie
     res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       sameSite: "strict",
       path: "/",
     });
@@ -51,7 +53,7 @@ router.post("/", async (req: Request, res: Response) => {
       message: "Logout successful",
     });
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDevelopment) {
       console.error("Logout error:", error);
     }
     return res.status(500).json({
