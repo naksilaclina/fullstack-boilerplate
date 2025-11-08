@@ -46,11 +46,24 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     }
 
     // Check if the user's session is still valid in the database
-    // Find session by userId (from the decoded token)
-    const session = await SessionModel.findOne({ 
-      userId: decoded.userId,
-      expiresAt: { $gt: new Date() } // Check if session hasn't expired
-    });
+    let session;
+    
+    if (decoded.sessionId) {
+      // If token has sessionId, use it for direct lookup
+      session = await SessionModel.findOne({ 
+        refreshTokenId: decoded.sessionId,
+        userId: decoded.userId,
+        invalidatedAt: null,
+        expiresAt: { $gt: new Date() }
+      });
+    } else {
+      // Fallback: Find any active session by userId (for backward compatibility)
+      session = await SessionModel.findOne({ 
+        userId: decoded.userId,
+        invalidatedAt: null,
+        expiresAt: { $gt: new Date() }
+      });
+    }
     
     if (!session) {
       return res.status(401).json({ 
@@ -59,7 +72,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     }
 
     // Attach user info and session ID to the request
-    req.user = decoded;
+    req.user = { ...decoded, sessionId: session.refreshTokenId };
     req.sessionId = session.refreshTokenId;
     
     next();

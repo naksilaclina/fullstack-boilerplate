@@ -12,7 +12,13 @@ interface Session {
   id: string;
   createdAt: string;
   userAgent?: string;
-  ipAddr?: string;
+  ipAddress?: string;
+  geoLocation?: {
+    ip?: string;
+    country?: string;
+    city?: string;
+    region?: string;
+  };
   expiresAt: string;
 }
 
@@ -22,14 +28,14 @@ export default function SessionsPage() {
   const [revoking, setRevoking] = useState<string | null>(null);
   const [revokingAll, setRevokingAll] = useState(false);
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
-    
+
     fetchSessions();
   }, [isAuthenticated, router]);
 
@@ -111,15 +117,15 @@ export default function SessionsPage() {
         <CardContent>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-semibold">Your Sessions</h2>
-            <Button 
-              onClick={handleRevokeAllSessions} 
+            <Button
+              onClick={handleRevokeAllSessions}
               disabled={revokingAll}
               variant="destructive"
             >
               {revokingAll ? "Revoking..." : "Revoke All Other Sessions"}
             </Button>
           </div>
-          
+
           {sessions.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500">No active sessions found</p>
@@ -134,7 +140,7 @@ export default function SessionsPage() {
                         {session.userAgent ? session.userAgent.substring(0, 50) + (session.userAgent.length > 50 ? "..." : "") : "Unknown Device"}
                       </h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        IP: {session.ipAddr || "Unknown"} • 
+                        IP: {session.ipAddress || session.geoLocation?.ip || "Unknown"} •
                         Created: {new Date(session.createdAt).toLocaleString()} •
                         Expires: {new Date(session.expiresAt).toLocaleString()}
                       </p>

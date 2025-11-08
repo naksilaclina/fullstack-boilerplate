@@ -5,10 +5,12 @@ import { isDevelopment } from "../../config";
 import UsersRouter from "./UsersRouter";
 import AdminRouter from "./AdminRouter";
 import AuthRouter from "./AuthRouter";
+import SessionRouter from "./SessionRouter/SessionRouter";
 
 const router = Router();
 
 router.use("/auth", AuthRouter);
+router.use("/sessions", SessionRouter);
 router.use("/users", UsersRouter);
 router.use("/admin", AdminRouter);
 

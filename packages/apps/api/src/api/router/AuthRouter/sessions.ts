@@ -35,7 +35,7 @@ router.get("/", authenticate, async (req: Request, res: Response) => {
       id: session._id,
       createdAt: session.createdAt,
       userAgent: session.userAgent,
-      ipAddr: session.ipAddr,
+      ipAddress: session.geoLocation.ip,
       expiresAt: session.expiresAt,
     }));
 

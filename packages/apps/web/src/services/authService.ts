@@ -141,11 +141,15 @@ export async function getProfile(): Promise<AuthResponse["user"]> {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    // Provide more descriptive error messages
+    // For 401 errors during auth check, throw a simple error without detailed message
+    // This is expected when user is not logged in
     if (response.status === 401) {
-      throw new Error("Your session has expired. Please login again.");
-    } else if (response.status === 403) {
+      throw new Error("UNAUTHENTICATED");
+    }
+    
+    const error = await response.json();
+    // Provide more descriptive error messages for other errors
+    if (response.status === 403) {
       throw new Error("Access denied. You don't have permission to view this information.");
     }
     throw new Error(error.error || "Failed to get profile information. Please try again later.");

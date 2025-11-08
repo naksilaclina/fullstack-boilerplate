@@ -15,10 +15,56 @@ const SessionSchema = new Schema(
     userAgent: {
       type: String,
     },
-    ipAddr: {
+    // Enhanced security fields
+    deviceFingerprint: {
       type: String,
-      required: true, // Make IP address required for security purposes
+      required: true,
+      index: true,
     },
+    lastActivity: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+    suspiciousActivity: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    geoLocation: {
+      country: {
+        type: String,
+        default: null,
+      },
+      city: {
+        type: String,
+        default: null,
+      },
+      ip: {
+        type: String,
+        required: true,
+      },
+    },
+    // Session management
+    maxConcurrentSessions: {
+      type: Number,
+      default: 5,
+    },
+    sessionType: {
+      type: String,
+      enum: ["web", "mobile", "api"],
+      default: "web",
+    },
+    // Security tracking
+    loginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lastLoginAttempt: {
+      type: Date,
+      default: null,
+    },
+    // Original fields
     expiresAt: {
       type: Date,
       required: true,
@@ -40,5 +86,12 @@ const SessionSchema = new Schema(
 // Add indexes for common queries
 SessionSchema.index({ userId: 1 });
 SessionSchema.index({ refreshTokenId: 1 });
+SessionSchema.index({ deviceFingerprint: 1 });
+SessionSchema.index({ userId: 1, deviceFingerprint: 1 });
+SessionSchema.index({ userId: 1, suspiciousActivity: 1 });
+SessionSchema.index({ lastActivity: 1 });
+
+// Compound index for concurrent session management
+SessionSchema.index({ userId: 1, invalidatedAt: 1, expiresAt: 1 });
 
 export default SessionSchema;

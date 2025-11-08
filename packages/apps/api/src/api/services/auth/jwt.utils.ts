@@ -4,8 +4,8 @@ import { jwtSecret, jwtRefreshSecret } from "~config";
 import crypto from "crypto";
 
 // Validate that secrets are properly configured
-const JWT_SECRET = jwtSecret as string;
-const JWT_REFRESH_SECRET = jwtRefreshSecret as string;
+const JWT_SECRET = jwtSecret || (process.env.NODE_ENV === 'development' ? 'dev-jwt-secret-change-in-production-32chars' : '');
+const JWT_REFRESH_SECRET = jwtRefreshSecret || (process.env.NODE_ENV === 'development' ? 'dev-jwt-refresh-secret-change-in-production-32chars' : '');
 
 if (!JWT_SECRET) {
   const errorMessage = "JWT_SECRET is not configured. Please set it in your environment variables.";
@@ -23,17 +23,35 @@ export interface JwtPayload {
   userId: string;
   email: string;
   role: string;
+  sessionId?: string; // Optional for backward compatibility
 }
 
 /**
  * Sign an access token JWT
  */
-export function signAccessToken(user: IUserDocument): string {
-  const payload: JwtPayload = {
-    userId: user._id.toString(),
-    email: user.email,
-    role: user.role,
-  };
+export function signAccessToken(user: IUserDocument): string;
+export function signAccessToken(payload: { userId: string; email?: string; role?: string; sessionId?: string }): string;
+export function signAccessToken(userOrPayload: IUserDocument | { userId: string; email?: string; role?: string; sessionId?: string }): string {
+  let payload: JwtPayload;
+  
+  // Check if it's an IUserDocument (has _id property)
+  if ('_id' in userOrPayload) {
+    const user = userOrPayload as IUserDocument;
+    payload = {
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
+    };
+  } else {
+    // It's a plain object with sessionId
+    const customPayload = userOrPayload as { userId: string; email?: string; role?: string; sessionId?: string };
+    payload = {
+      userId: customPayload.userId,
+      email: customPayload.email || '',
+      role: customPayload.role || 'user',
+      sessionId: customPayload.sessionId,
+    };
+  }
 
   return jwt.sign(payload, JWT_SECRET, {
     expiresIn: "15m",
@@ -45,7 +63,9 @@ export function signAccessToken(user: IUserDocument): string {
 /**
  * Sign a refresh token JWT
  */
-export function signRefreshToken(user: IUserDocument): string {
+export function signRefreshToken(user: IUserDocument): string;
+export function signRefreshToken(user: { _id: any; email: string; role: string }): string;
+export function signRefreshToken(user: IUserDocument | { _id: any; email: string; role: string }): string {
   const payload: JwtPayload = {
     userId: user._id.toString(),
     email: user.email,
@@ -91,7 +111,7 @@ export function verifyAccessToken(token: string): JwtPayload | null {
 }
 
 /**
- * Verify a refresh token JWT
+ * Verify a refresh token JWT with enhanced security checks
  */
 export async function verifyRefreshToken(token: string): Promise<(JwtPayload & { jti: string }) | null> {
   try {
@@ -107,15 +127,26 @@ export async function verifyRefreshToken(token: string): Promise<(JwtPayload & {
     
     const payload = decoded as JwtPayload & { jti: string };
     
-    // Check if token has been invalidated (rotation) by looking in the database
+    // Enhanced session validation
     const session = await SessionModel.findOne({ 
       refreshTokenId: payload.jti,
-      invalidatedAt: { $ne: null }
+      userId: payload.userId,
+      expiresAt: { $gt: new Date() }
     });
     
-    // If we found an invalidated session, the token is invalid
-    if (session) {
+    // If session doesn't exist, is invalidated, or expired
+    if (!session || session.invalidatedAt) {
       return null;
+    }
+
+    // Check for suspicious activity
+    if (session.suspiciousActivity) {
+      console.warn('[SECURITY] Refresh token used for suspicious session:', {
+        userId: payload.userId,
+        sessionId: payload.jti,
+        timestamp: new Date().toISOString()
+      });
+      // Still allow refresh but log the event
     }
     
     return payload;

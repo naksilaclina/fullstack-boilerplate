@@ -1,12 +1,31 @@
 import { Document } from "mongoose";
 
+export interface IGeoLocation {
+  country?: string;
+  city?: string;
+  ip: string;
+}
+
 export interface ISession extends Document {
   userId: string;
   refreshTokenId: string;
   userAgent?: string;
-  ipAddr: string; // Make IP address required
+  // Enhanced security fields
+  deviceFingerprint: string;
+  lastActivity: Date;
+  suspiciousActivity: boolean;
+  geoLocation: IGeoLocation;
+  maxConcurrentSessions: number;
+  sessionType: "web" | "mobile" | "api";
+  loginAttempts: number;
+  lastLoginAttempt?: Date | null;
+  // Original fields
   expiresAt: Date;
   invalidatedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ISessionDocument extends ISession {
+  _id: string;
 }

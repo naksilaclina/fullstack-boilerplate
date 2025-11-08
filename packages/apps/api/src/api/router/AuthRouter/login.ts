@@ -3,6 +3,7 @@ import { body, validationResult } from "express-validator";
 import { compare } from "bcrypt";
 import { UserModel, SessionModel, type IUserDocument } from "@naksilaclina/mongodb";
 import { signAccessToken, signRefreshToken } from "~api/services/auth/jwt.utils";
+import { createEnhancedSession } from "~api/services/auth/session.utils";
 import { validateEmail, validatePassword, handleValidationErrors } from "~api/utils/validation.utils";
 import { authRateLimiter } from "~api/middlewares";
 import { v4 as uuidv4 } from "uuid";
@@ -100,27 +101,33 @@ router.post(
 
       devLog("Password is valid", { email, userId: user._id });
 
-      // Generate tokens
-      devLog("Generating access token", { email, userId: user._id });
-      const accessToken = signAccessToken(user as IUserDocument);
-      
-      devLog("Generating refresh token", { email, userId: user._id });
-      const refreshToken = signRefreshToken(user as IUserDocument);
-
-      // Create session record
+      // Create enhanced session record first
       const sessionId = uuidv4();
       const clientIP = getClientIP(req);
       
-      const session = new SessionModel({
+      devLog("Creating enhanced session", { sessionId, userId: user._id, clientIP });
+      const session = await createEnhancedSession({
         userId: user._id.toString(),
         refreshTokenId: sessionId,
+        ipAddress: clientIP,
         userAgent: req.get("User-Agent"),
-        ipAddr: clientIP,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        sessionType: 'web',
+        maxConcurrentSessions: 5
+      }, req);
+      
+      devLog("Enhanced session created", { sessionId, userId: user._id, clientIP, expiresAt: session.expiresAt });
+
+      // Generate tokens with session ID
+      devLog("Generating access token with session ID", { email, userId: user._id, sessionId });
+      const accessToken = signAccessToken({
+        userId: user._id.toString(),
+        email: user.email,
+        role: user.role,
+        sessionId: sessionId
       });
       
-      await session.save();
-      devLog("Session created", { sessionId, userId: user._id, clientIP, expiresAt: session.expiresAt });
+      devLog("Generating refresh token", { email, userId: user._id });
+      const refreshToken = signRefreshToken(user as IUserDocument);
 
       // Set refresh token in HTTP-only cookie
       devLog("Setting refresh token cookie", { email, userId: user._id });
