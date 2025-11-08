@@ -1,6 +1,6 @@
 {
   "include": ["src/**/*", "bin/**/*"],
-  "exclude": ["node_modules", "dist", "../../config/**/*"],
+  "exclude": ["node_modules", "dist"],
 
   "ts-node": {
     "require": ["tsconfig-paths/register"]
@@ -14,6 +14,7 @@
     "outDir": "dist",
 
     "baseUrl": ".",
+    "rootDir": ".",
 
     "paths": {
       "~entities": ["src/entities"],

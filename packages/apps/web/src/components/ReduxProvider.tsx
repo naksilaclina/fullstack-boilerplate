@@ -4,13 +4,14 @@ import { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '@/store';
 import { initAuthState, checkAuthStatus } from '@/store/authSlice';
+import { authManager } from '@/utils/authManager';
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Sadece ilk yüklemede çalıştır
+    // Initialize auth only once using the auth manager
     const initAuth = async () => {
       try {
-        await store.dispatch(checkAuthStatus()).unwrap();
+        await authManager.checkAuth(store.dispatch, checkAuthStatus);
         // User is authenticated
       } catch (error: any) {
         // Silently handle unauthenticated state - this is expected

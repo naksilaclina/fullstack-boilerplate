@@ -23,9 +23,10 @@ export default function LoginPage() {
   // Use a ref to prevent multiple simultaneous submissions
   const isSubmitting = useRef(false);
 
-  // Redirect authenticated users to their default page
+  // Redirect authenticated users to their default page (only on initial load)
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && !isSubmitting.current) {
+      console.log('🔄 Login page redirecting authenticated user to dashboard');
       // Use our authorization service to determine redirect path
       const redirectPath = authorizationService.getPostLoginRedirectPath(user);
       router.push(redirectPath);
@@ -76,9 +77,6 @@ export default function LoginPage() {
       // Get full user profile
       const userProfile = await getProfile();
       login(userProfile);
-
-      // State'in güncellenmesini bekle
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       toastService.success({
         message: "Login Successful",
@@ -131,9 +129,6 @@ export default function LoginPage() {
       const userProfile = await getProfile();
       login(userProfile);
 
-      // State'in güncellenmesini bekle
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       toastService.success({
         message: "Login Successful",
         description: "Welcome back! You have been successfully logged in."

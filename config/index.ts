@@ -279,15 +279,24 @@ export function getMongoConfig(config: MonorepoConfig) {
 /**
  * Environment-aware configuration logging
  */
+let hasLoggedConfiguration = false;
+
 function logMonorepoConfiguration(config: MonorepoConfig): void {
-  console.log(`🚀 Monorepo Environment: ${config.nodeEnv.toUpperCase()}`);
+  // Only log once to prevent duplicates
+  if (hasLoggedConfiguration) {
+    return;
+  }
+  
+  hasLoggedConfiguration = true;
+  
+  console.log(`� MoHnorepo Environment: ${config.nodeEnv.toUpperCase()}`);
   console.log('================================');
   console.log(`📡 API Server: ${config.api.baseUrl}`);
   console.log(`🌐 Web Server: ${config.web.baseUrl}`);
   console.log(`🗄️  Database: ${config.database.uri.replace(/\/\/.*@/, '//***:***@')}`);
   
   if (config.nodeEnv === 'development') {
-    console.log(`🔧 Debug Routes: ${config.features.enableDebugRoutes ? 'Enabled' : 'Disabled'}`);
+    console.log(`� Debug  Routes: ${config.features.enableDebugRoutes ? 'Enabled' : 'Disabled'}`);
     console.log(`📚 Swagger: ${config.features.enableSwagger ? 'Enabled' : 'Disabled'}`);
     console.log(`🔄 Hot Reload: ${config.features.enableHotReload ? 'Enabled' : 'Disabled'}`);
     console.log(`🎭 Mock Services: ${config.features.enableMockServices ? 'Enabled' : 'Disabled'}`);
@@ -369,8 +378,7 @@ export const config = createMonorepoConfig(validatedEnv);
 // Validate runtime configuration
 validateRuntimeConfig(config);
 
-// Log configuration (non-sensitive parts)
-logMonorepoConfiguration(config);
+// Configuration logging is handled by individual applications
 
 // Export application-specific configurations
 export const apiConfig = getApiConfig(config);

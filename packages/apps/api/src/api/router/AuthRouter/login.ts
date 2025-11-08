@@ -31,10 +31,17 @@ const getClientIP = (req: Request): string => {
 
 import { isDevelopment, isProduction } from "../../../config";
 
-// Helper function for conditional logging
-const devLog = (...args: any[]) => {
+// Helper function for conditional logging - reduced verbosity
+const devLog = (message: string, data?: any) => {
   if (isDevelopment) {
-    console.log(...args);
+    // Only log important events, not every step
+    if (message.includes('Login attempt started') || 
+        message.includes('Login successful') || 
+        message.includes('User not found') || 
+        message.includes('Invalid password') ||
+        message.includes('Account is deactivated')) {
+      console.log(message, data);
+    }
   }
 };
 
@@ -71,7 +78,6 @@ router.post(
       }
 
       const { email, password } = req.body;
-      devLog("Validation passed", { email });
 
       // Find user by email
       const user = await UserModel.findOne({ email });
@@ -81,8 +87,6 @@ router.post(
           error: "Invalid credentials",
         });
       }
-
-      devLog("User found", { email, userId: user._id, isActive: user.isActive });
 
       // Check if account is active
       if (!user.isActive) {
@@ -101,13 +105,10 @@ router.post(
         });
       }
 
-      devLog("Password is valid", { email, userId: user._id });
-
       // Create enhanced session record first
       const sessionId = uuidv4();
       const clientIP = getClientIP(req);
       
-      devLog("Creating enhanced session", { sessionId, userId: user._id, clientIP });
       const session = await createEnhancedSession({
         userId: user._id.toString(),
         refreshTokenId: sessionId,
@@ -116,11 +117,8 @@ router.post(
         sessionType: 'web',
         maxConcurrentSessions: 5
       }, req);
-      
-      devLog("Enhanced session created", { sessionId, userId: user._id, clientIP, expiresAt: session.expiresAt });
 
       // Generate tokens with session ID
-      devLog("Generating access token with session ID", { email, userId: user._id, sessionId });
       const accessToken = signAccessToken({
         userId: user._id.toString(),
         email: user.email,
@@ -128,11 +126,9 @@ router.post(
         sessionId: sessionId
       });
       
-      devLog("Generating refresh token", { email, userId: user._id });
       const refreshToken = signRefreshToken(user as IUserDocument);
 
       // Set refresh token in HTTP-only cookie
-      devLog("Setting refresh token cookie", { email, userId: user._id });
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: isProduction,
@@ -142,7 +138,6 @@ router.post(
       });
 
       // Set access token in HTTP-only cookie for enhanced security
-      devLog("Setting access token cookie", { email, userId: user._id });
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: isProduction,

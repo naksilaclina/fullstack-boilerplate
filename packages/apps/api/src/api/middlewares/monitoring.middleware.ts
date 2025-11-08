@@ -27,8 +27,8 @@ export function monitoringMiddleware(options: MonitoringOptions = {}) {
     // Add request ID to request object for tracking
     (req as any).requestId = requestId;
 
-    // Only log non-auth requests to reduce noise
-    if (logRequests && !req.url.includes('/auth/profile')) {
+    // Only log API requests (not Next.js page requests)
+    if (logRequests && req.url.startsWith('/api/')) {
       console.log('API Request:', {
         requestId,
         method: req.method,
@@ -74,8 +74,8 @@ export function monitoringMiddleware(options: MonitoringOptions = {}) {
               responseTime: `${responseTime}ms`
             });
           }
-        } else if (logRequests && responseTime > 100) {
-          // Only log successful requests if they take more than 100ms
+        } else if (logRequests && responseTime > 500 && !req.path.includes('/auth/')) {
+          // Only log successful non-auth requests if they take more than 500ms
           console.log('API Success:', {
             requestId,
             method: req.method,

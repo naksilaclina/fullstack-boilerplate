@@ -9,6 +9,7 @@ import { UserRole } from "@/lib/roles";
 import type { User } from "@/store/authSlice";
 import { useAppDispatch } from "@/store";
 import { checkAuthStatus } from "@/store/authSlice";
+import { authManager } from "@/utils/authManager";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -28,18 +29,20 @@ export default function ProtectedRoute({
       // Only check auth if we're not already loading and not authenticated
       if (!isAuthenticated && !loading && !initializing) {
         try {
-          const result = await dispatch(checkAuthStatus());
-          if (checkAuthStatus.rejected.match(result)) {
+          const result = await authManager.checkAuth(dispatch, checkAuthStatus);
+          if (result && checkAuthStatus.rejected.match(result)) {
             // If checking auth status fails, redirect to login
             toastService.error({
               message: "Authentication Required", 
               description: "Please log in to access this page.",
             });
+            console.log('🔄 ProtectedRoute redirecting to login - auth check failed');
             router.push("/login");
             return;
           }
         } catch (error) {
           // If checking auth status fails, redirect to login
+          console.log('🔄 ProtectedRoute redirecting to login - auth check error:', error);
           toastService.error({
             message: "Authentication Required",
             description: "Please log in to access this page.",

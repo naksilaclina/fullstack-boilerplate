@@ -9,6 +9,7 @@ import { UserRole } from "@/lib/roles";
 import type { User } from "@/store/authSlice";
 import { useAppDispatch } from "@/store";
 import { checkAuthStatus } from "@/store/authSlice";
+import { authManager } from "@/utils/authManager";
 
 interface RoleProtectedRouteProps {
   children: React.ReactNode;
@@ -26,7 +27,7 @@ export default function RoleProtectedRoute({
   useEffect(() => {
     // Only dispatch if not already loading/initializing and not authenticated
     if (!isReady && !isAuthenticated && !isLoading) {
-      dispatch(checkAuthStatus());
+      authManager.checkAuth(dispatch, checkAuthStatus);
     }
   }, [isReady, isAuthenticated, isLoading, dispatch]);
 
@@ -35,6 +36,7 @@ export default function RoleProtectedRoute({
     if (isReady) {
       // Authenticated değilse login'e yönlendir
       if (!isAuthenticated) {
+        console.log('🔄 RoleProtectedRoute redirecting to login - not authenticated');
         router.push("/login");
         return;
       }

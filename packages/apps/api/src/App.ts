@@ -73,7 +73,6 @@ export default class App {
       
       // Start session monitoring service after database connection
       sessionMonitoringService.startMonitoring();
-      console.log("Session monitoring service started");
     } catch (error) {
       console.error("Failed to connect to MongoDB:", error);
       process.exit(1);
