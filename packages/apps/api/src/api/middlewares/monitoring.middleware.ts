@@ -1,0 +1,121 @@
+import { Request, Response, NextFunction } from "express";
+
+/**
+ * Lightweight monitoring middleware that doesn't interfere with API communication
+ */
+
+interface MonitoringOptions {
+  logRequests?: boolean;
+  performanceTracking?: boolean;
+}
+
+/**
+ * Safe request monitoring middleware
+ */
+export function monitoringMiddleware(options: MonitoringOptions = {}) {
+  const {
+    logRequests = process.env.NODE_ENV === 'development',
+    performanceTracking = true
+  } = options;
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    const startTime = Date.now();
+    const requestId = Math.random().toString(36).substring(2, 15);
+
+    // Add request ID to request object for tracking
+    (req as any).requestId = requestId;
+
+    if (logRequests) {
+      console.log('API Request:', {
+        requestId,
+        method: req.method,
+        url: req.url,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Track response time without breaking the response
+    const originalSend = res.send;
+    res.send = function(body) {
+      const responseTime = Date.now() - startTime;
+      
+      if (performanceTracking) {
+        // Log slow requests (>1000ms)
+        if (responseTime > 1000) {
+          console.warn('Slow API Request:', {
+            requestId,
+            method: req.method,
+            path: req.path,
+            responseTime: `${responseTime}ms`,
+            statusCode: res.statusCode
+          });
+        }
+
+        // Log error responses with appropriate levels
+        if (res.statusCode >= 500) {
+          console.error('API Server Error:', {
+            requestId,
+            method: req.method,
+            path: req.path,
+            statusCode: res.statusCode,
+            responseTime: `${responseTime}ms`
+          });
+        } else if (res.statusCode >= 400) {
+          console.warn('API Client Error:', {
+            requestId,
+            method: req.method,
+            path: req.path,
+            statusCode: res.statusCode,
+            responseTime: `${responseTime}ms`
+          });
+        } else if (logRequests) {
+          console.log('API Success:', {
+            requestId,
+            method: req.method,
+            path: req.path,
+            statusCode: res.statusCode,
+            responseTime: `${responseTime}ms`
+          });
+        }
+      }
+
+      return originalSend.call(this, body);
+    };
+
+    next();
+  };
+}
+
+/**
+ * Basic security monitoring without blocking requests
+ */
+export function securityMonitoringMiddleware(req: Request, res: Response, next: NextFunction) {
+  // Monitor for basic suspicious patterns without blocking
+  const suspiciousPatterns = [
+    /\.\./,  // Directory traversal
+    /<script/i,  // XSS attempts
+    /union.*select/i,  // SQL injection
+  ];
+
+  const requestData = JSON.stringify({
+    url: req.url,
+    body: req.body,
+    query: req.query
+  });
+
+  const suspiciousActivity = suspiciousPatterns.some(pattern => 
+    pattern.test(requestData)
+  );
+
+  if (suspiciousActivity) {
+    console.warn('Security Alert:', {
+      type: 'SUSPICIOUS_REQUEST',
+      timestamp: new Date().toISOString(),
+      ip: req.ip,
+      url: req.url,
+      method: req.method
+    });
+  }
+
+  next();
+}

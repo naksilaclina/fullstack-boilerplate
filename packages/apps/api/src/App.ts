@@ -11,6 +11,9 @@ import {
 import { port, mongodbUri } from "./config";
 import { api } from "./api";
 import { securityMiddleware, generalRateLimiter } from "./api/middlewares";
+import { monitoringMiddleware } from "./api/middlewares/monitoring.middleware";
+import { sessionTrackingMiddleware } from "./api/middlewares/session.middleware";
+import { errorHandler, notFoundHandler } from "./api/middlewares/error.middleware";
 
 export default class App {
   public express: ExpressApp;
@@ -33,11 +36,29 @@ export default class App {
       origin: corsOrigins,
       credentials: true,
     }));
+    
+    // Add monitoring middleware first (for request tracking)
+    this.express.use(monitoringMiddleware({
+      logRequests: process.env.NODE_ENV === 'development',
+      performanceTracking: true
+    }));
+    
+    // Add session tracking
+    this.express.use(sessionTrackingMiddleware);
+    
+    // Apply security middleware
     this.express.use(securityMiddleware);
     this.express.use(generalRateLimiter);
+    
     console.log("Mounting API routes at /api/v1");
     this.express.use("/api/v1", api);
     console.log("API routes mounted");
+    
+    // Add 404 handler for undefined routes
+    this.express.use(notFoundHandler);
+    
+    // Add global error handler (must be last)
+    this.express.use(errorHandler);
   }
 
   async start() {

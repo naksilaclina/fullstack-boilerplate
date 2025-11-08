@@ -16,7 +16,12 @@
     "seed": "npm run seed --workspace=@naksilaclina/mongodb",
     "start": "node bin/start.js",
     "generate-secrets": "node scripts/generate-secrets.js",
-    "test-secrets": "powershell -ExecutionPolicy Bypass -File scripts/test-secrets.ps1"
+    "test-secrets": "powershell -ExecutionPolicy Bypass -File scripts/test-secrets.ps1",
+    "security-audit": "npm audit --audit-level moderate",
+    "security-check": "npm run security-audit && npm run lint",
+    "security-full-audit": "node scripts/security-audit.js",
+    "security-snyk": "npx snyk test",
+    "security-comprehensive": "npm run security-full-audit && npm run security-snyk && npm audit"
   },
   "devDependencies": {
     "@types/uuid": "^10.0.0",
@@ -29,6 +34,7 @@
     "eslint-config-prettier": "^8.6.0",
     "eslint-config-standard-with-typescript": "^34.0.0",
     "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-security": "^3.0.1",
     "prettier": "^2.8.3",
     "typescript": "^4.9.5"
   },

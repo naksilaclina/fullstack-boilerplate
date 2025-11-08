@@ -12,6 +12,15 @@ router.use("/auth", AuthRouter);
 router.use("/users", UsersRouter);
 router.use("/admin", AdminRouter);
 
+// Health check endpoint
+router.get("/ping", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    message: "API is running"
+  });
+});
+
 if (isDevelopment) {
   router.get("/error", () => {
     throw new Error("Testing error handling in development mode");
