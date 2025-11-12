@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { register as registerService } from "@/services/authService";
-import { toastService } from "@/services/toastService";
+import { useAuth } from "@/hooks/auth";
+import { register as registerService } from "@/services/auth";
+import { toastService } from "@/services/ui";
 
 export default function RegisterPage() {
   const [firstName, setFirstName] = useState("");

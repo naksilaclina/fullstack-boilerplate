@@ -4,7 +4,7 @@
   "description": "Monorepo with secure JWT secret generation. Run 'npm run generate-secrets' to create secure tokens.",
   "private": true,
   "workspaces": [
-    "packages/apps/api",
+    "packages/apps/server",
     "packages/apps/web",
     "packages/modules/mongodb"
   ],

@@ -43,7 +43,7 @@ console.log('🧹 Cleaning build artifacts and temporary files...');
 // Remove directories
 removeRecursive('dist');
 removeRecursive('packages/apps/web/.next');
-removeRecursive('packages/apps/api/dist');
+removeRecursive('packages/apps/server/dist');
 
 // Remove generated files in config
 removeGlob('config/*.js');

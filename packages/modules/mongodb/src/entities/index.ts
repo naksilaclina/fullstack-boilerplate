@@ -1,2 +1,2 @@
 export * from "./User";
-export * from "./Session/index";
+export * from "./Session";

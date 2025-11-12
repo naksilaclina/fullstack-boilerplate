@@ -9,10 +9,10 @@ const backendPort = process.env.API_PORT || 5000;
 const frontendPort = process.env.WEB_PORT || 3000;
 
 // Start the API server with its own environment variables
-const apiProcess = spawn('npm', ['run', 'dev', '--workspace=@naksilaclina/api'], {
+const apiProcess = spawn('npm', ['run', 'dev', '--workspace=@naksilaclina/server'], {
   stdio: ['pipe', 'pipe', 'pipe'],
   shell: true,
-  cwd: path.join(__dirname, '..', 'packages', 'apps', 'api'),
+  cwd: path.join(__dirname, '..', 'packages', 'apps', 'server'),
   env: {
     ...process.env,
     PORT: backendPort

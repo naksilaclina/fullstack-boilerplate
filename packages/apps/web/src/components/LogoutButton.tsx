@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { NavbarButton } from "@/components/ui/resizable-navbar";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { logout as logoutService } from "@/services/authService";
-import { toastService } from "@/services/toastService";
+import { useAuth } from "@/hooks/auth";
+import { logout as logoutService } from "@/services/auth";
+import { toastService } from "@/services/ui";
 import { getPostLogoutRedirectPath } from "@/utils";
 
 export default function LogoutButton() {

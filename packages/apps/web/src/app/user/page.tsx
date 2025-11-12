@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthGuard } from "@/components";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useAuth } from "@/hooks/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UserRole } from "@/lib";

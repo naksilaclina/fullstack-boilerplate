@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useAuth } from "@/hooks/auth";
 import { NavbarButton } from "@/components/ui/resizable-navbar";
 import { UserRole } from "@/lib";
 

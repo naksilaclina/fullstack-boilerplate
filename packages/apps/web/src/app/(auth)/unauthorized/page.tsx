@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { toastService } from "@/services/toastService";
+import { toastService } from "@/services/ui";
 
 export default function UnauthorizedPage() {
   useEffect(() => {

@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { getSessions, revokeSession, revokeAllSessions } from "@/services/authService";
-import { toastService } from "@/services/toastService";
+import { useAuth } from "@/hooks/auth";
+import { getSessions, revokeSession, revokeAllSessions } from "@/services/auth";
+import { toastService } from "@/services/ui";
 
 interface Session {
   id: string;

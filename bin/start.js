@@ -7,10 +7,10 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 console.log('🚀 Starting Monorepo Production Environment...');
 
 // Start the API server with its own environment variables
-const apiProcess = spawn('npm', ['run', 'start', '--workspace=@naksilaclina/api'], {
+const apiProcess = spawn('npm', ['run', 'start', '--workspace=@naksilaclina/server'], {
   stdio: 'inherit',
   shell: true,
-  cwd: path.join(__dirname, '..', 'packages', 'apps', 'api') // Set working directory to API app
+  cwd: path.join(__dirname, '..', 'packages', 'apps', 'server') // Set working directory to server app
 });
 
 // Wait a bit for API to start, then start the frontend with its own environment variables

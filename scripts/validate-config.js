@@ -17,7 +17,7 @@ function checkRequiredFiles() {
     '.env.example',
     'config/index.ts',
     'config/schema.ts',
-    'packages/apps/api/src/config.ts',
+    'packages/apps/server/src/config.ts',
     'packages/apps/web/src/config.ts',
     'packages/modules/mongodb/src/config.ts'
   ];
@@ -105,7 +105,7 @@ function testConfigurationLoading() {
     const configFiles = [
       'config/index.ts',
       'config/schema.ts',
-      'packages/apps/api/src/config.ts',
+      'packages/apps/server/src/config.ts',
       'packages/apps/web/src/config.ts',
       'packages/modules/mongodb/src/config.ts'
     ];
