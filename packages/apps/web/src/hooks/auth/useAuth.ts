@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
-import { setUser, clearUser, logout } from '../../store/authSlice';
+import { setUser, logout } from '../../store/authSlice';
 import type { User } from '../../store/authSlice';
 
 export const useAuth = () => {

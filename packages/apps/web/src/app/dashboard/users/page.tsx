@@ -1,10 +1,10 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { AuthGuard } from "@/components";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { Button } from "@/components/ui/button";
-import { UserRole } from "@/lib/roles";
+import { UserRole } from "@/lib";
 
 export default function UsersManagementPage() {
   const { user } = useAuth();
@@ -17,7 +17,7 @@ export default function UsersManagementPage() {
   ];
 
   return (
-    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+    <AuthGuard allowedRoles={[UserRole.ADMIN]}>
       <div className="py-16 md:py-24">
         <div className="flex flex-col items-center gap-6 text-center mb-8">
           <h1 className="text-3xl font-semibold tracking-tight">
@@ -77,6 +77,6 @@ export default function UsersManagementPage() {
           </CardContent>
         </Card>
       </div>
-    </ProtectedRoute>
+    </AuthGuard>
   );
 }

@@ -3,8 +3,8 @@
 import { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '@/store';
-import { initAuthState, checkAuthStatus } from '@/store/authSlice';
-import { authManager } from '@/utils/authManager';
+import { checkAuthStatus } from '@/store/authSlice';
+import { authManager } from '@/utils';
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {

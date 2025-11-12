@@ -67,12 +67,7 @@ export const authSlice = createSlice({
       state.backgroundValidating = false; // Background validation bitti
       state.error = null;
     },
-    // Initialize auth state by checking with the backend
-    initAuthState: (state) => {
-      // This will trigger the async thunk to check auth status
-      state.loading = true;
-      state.error = null;
-    },
+
     // Logout action to clear user state
     logout: (state) => {
       state.user = null;
@@ -119,7 +114,7 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setUser, clearUser, initAuthState, logout } = authSlice.actions;
+export const { setUser, clearUser, logout } = authSlice.actions;
 
 export type { AuthState };
 

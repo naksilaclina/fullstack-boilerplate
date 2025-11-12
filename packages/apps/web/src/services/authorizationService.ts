@@ -1,6 +1,6 @@
-import { UserRole, hasRole, hasAnyRole, getDefaultRedirectPath } from "@/lib/roles";
+import { UserRole, hasRole, hasAnyRole } from "@/lib";
 import { User } from "@/store/authSlice";
-import { getAccessDeniedRedirectPathForRole, getPostLoginRedirectPath } from "@/lib/redirectUtils";
+import { getAccessDeniedRedirectPathForRole, getPostLoginRedirectPath, getRedirectPathForRole } from "@/utils";
 
 // Authorization service to handle role-based access control
 class AuthorizationService {
@@ -22,7 +22,7 @@ class AuthorizationService {
 
   // Get the default redirect path for a user
   getDefaultRedirectPath(user: User): string {
-    return getDefaultRedirectPath(user.role as UserRole);
+    return getRedirectPathForRole(user.role as UserRole);
   }
 
   // Get redirect path after login based on user role

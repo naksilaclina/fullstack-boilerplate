@@ -30,14 +30,3 @@ export function hasAnyRole(userRole: string, allowedRoles: UserRole[]): boolean 
   return allowedRoles.some(role => hasRole(userRole, role));
 }
 
-// Get the default redirect path for a user role
-export function getDefaultRedirectPath(userRole: UserRole): string {
-  switch (userRole) {
-    case UserRole.ADMIN:
-      return "/dashboard";
-    case UserRole.USER:
-      return "/user";
-    default:
-      return "/";
-  }
-}

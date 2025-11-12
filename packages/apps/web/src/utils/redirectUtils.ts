@@ -1,4 +1,4 @@
-import { UserRole } from "@/lib/roles";
+import { UserRole } from "@/lib";
 
 // Utility functions for handling redirects based on user roles
 

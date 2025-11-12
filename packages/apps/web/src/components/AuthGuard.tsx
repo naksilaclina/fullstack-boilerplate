@@ -5,58 +5,67 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { toastService } from "@/services/toastService";
 import { authorizationService } from "@/services/authorizationService";
-import { UserRole } from "@/lib/roles";
+import { UserRole } from "@/lib";
 import type { User } from "@/store/authSlice";
 import { useAppDispatch } from "@/store";
 import { checkAuthStatus } from "@/store/authSlice";
-import { authManager } from "@/utils/authManager";
+import { authManager } from "@/utils";
 
-interface RoleProtectedRouteProps {
+interface AuthGuardProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
+  requireAuth?: boolean; // Default true, set false for public routes with optional auth
 }
 
-export default function RoleProtectedRoute({
+export default function AuthGuard({
   children,
-  allowedRoles
-}: RoleProtectedRouteProps) {
+  allowedRoles,
+  requireAuth = true
+}: AuthGuardProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user, isAuthenticated, isLoading, isReady } = useAuth();
 
   useEffect(() => {
-    // Only dispatch if not already loading/initializing and not authenticated
+    // Only dispatch auth check if not already loading/initializing and not authenticated
     if (!isReady && !isAuthenticated && !isLoading) {
       authManager.checkAuth(dispatch, checkAuthStatus);
     }
   }, [isReady, isAuthenticated, isLoading, dispatch]);
 
   useEffect(() => {
-    // Auth state hazır olduğunda kontrolleri yap
-    if (isReady) {
-      // Authenticated değilse login'e yönlendir
-      if (!isAuthenticated) {
-        console.log('🔄 RoleProtectedRoute redirecting to login - not authenticated');
-        router.push("/login");
-        return;
-      }
+    // Wait for auth state to be ready
+    if (!isReady) return;
 
-      // Role kontrolü yap
+    // If authentication is required but user is not authenticated
+    if (requireAuth && !isAuthenticated) {
+      console.log('🔄 AuthGuard redirecting to login - authentication required');
+      toastService.error({
+        message: "Authentication Required",
+        description: "Please log in to access this page."
+      });
+      router.push("/login");
+      return;
+    }
+
+    // If user is authenticated and roles are specified, check authorization
+    if (isAuthenticated && allowedRoles && user) {
       const isAccessible = authorizationService.isRouteAccessible(user as User, allowedRoles);
-
-      if (user && !isAccessible) {
+      
+      if (!isAccessible) {
         toastService.error({
           message: "Access Denied",
           description: `You don't have permission to access this page. Your role is ${user.role}.`
         });
         const redirectPath = authorizationService.getAccessDeniedRedirectPath(user as User);
+        console.log('🔄 AuthGuard redirecting due to insufficient permissions');
         router.push(redirectPath);
         return;
       }
     }
-  }, [isReady, isAuthenticated, user, allowedRoles, router]);
+  }, [isReady, isAuthenticated, user, allowedRoles, requireAuth, router]);
 
-  // Loading state'i göster
+  // Show loading state while auth is being determined
   if (isLoading || !isReady) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
@@ -68,8 +77,8 @@ export default function RoleProtectedRoute({
     );
   }
 
-  // Auth state hazır ama authenticated değil
-  if (!isAuthenticated) {
+  // Show redirecting state for unauthenticated users on protected routes
+  if (requireAuth && !isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <div className="text-center">
@@ -79,8 +88,8 @@ export default function RoleProtectedRoute({
     );
   }
 
-  // Role kontrolü
-  if (!authorizationService.isRouteAccessible(user as User, allowedRoles)) {
+  // Show access denied state for authenticated users without proper roles
+  if (isAuthenticated && allowedRoles && user && !authorizationService.isRouteAccessible(user as User, allowedRoles)) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <div className="text-center">
@@ -90,6 +99,6 @@ export default function RoleProtectedRoute({
     );
   }
 
-  // Her şey tamam, children'ı render et
+  // All checks passed, render children
   return <>{children}</>;
 }

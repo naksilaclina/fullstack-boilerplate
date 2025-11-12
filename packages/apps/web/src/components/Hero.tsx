@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { NavbarButton } from "@/components/ui/resizable-navbar";
-import { UserRole } from "@/lib/roles";
+import { UserRole } from "@/lib";
 
 export default function Hero() {
   const router = useRouter();

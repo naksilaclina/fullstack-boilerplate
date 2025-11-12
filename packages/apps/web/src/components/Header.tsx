@@ -12,10 +12,10 @@ import {
 } from "@/components/ui/resizable-navbar";
 import { useState } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
-import LogoutButton from "@/components/LogoutButton";
-import { ThemeSwitch } from "@/components/ThemeSwitch";
+import { LogoutButton } from "@/components";
+import { ThemeSwitch } from "@/components";
 import { useTheme } from "next-themes";
-import { UserRole } from "@/lib/roles";
+import { UserRole } from "@/lib";
 import { usePathname } from "next/navigation";
 
 export default function Header() {
