@@ -13,7 +13,6 @@ import { securityMiddleware, generalRateLimiter } from "./api/middlewares";
 import { monitoringMiddleware } from "./api/middlewares/monitoring.middleware";
 import { sessionTrackingMiddleware } from "./api/middlewares/session.middleware";
 import { errorHandler, notFoundHandler } from "./api/middlewares/error.middleware";
-import { sessionMonitoringService } from "./api/services/auth";
 
 export default class App {
   public express: ExpressApp;
@@ -65,9 +64,6 @@ export default class App {
     try {
       this.mongoose = await connectToMongodb(mongodbUri);
       console.log(`Connected to MongoDB`);
-      
-      // Start session monitoring service after database connection
-      sessionMonitoringService.startMonitoring();
     } catch (error) {
       console.error("Failed to connect to MongoDB:", error);
       process.exit(1);
@@ -90,10 +86,6 @@ export default class App {
   }
 
   async stop() {
-    // Stop session monitoring service
-    sessionMonitoringService.stopMonitoring();
-    console.log("Session monitoring service stopped");
-
     if (this.mongoose) {
       console.log("Disconnecting from MongoDB");
       await this.mongoose?.disconnect();

@@ -19,7 +19,7 @@ import { UserRole } from "@/lib";
 import { usePathname } from "next/navigation";
 
 export default function Header() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isReady } = useAuth();
   const { theme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -87,7 +87,8 @@ export default function Header() {
           />
           <div className="flex items-center gap-4">
             <ThemeSwitch />
-            {!isAuthenticated ? (
+            {/* Show nothing while auth state is initializing */}
+            {!isReady ? null : !isAuthenticated ? (
               <>
                 <NavbarButton href="/login" variant="secondary">Login</NavbarButton>
                 <NavbarButton 
@@ -141,7 +142,8 @@ export default function Header() {
               <div className="flex justify-center py-2">
                 <ThemeSwitch />
               </div>
-              {!isAuthenticated ? (
+              {/* Show nothing while auth state is initializing */}
+              {!isReady ? null : !isAuthenticated ? (
                 <>
                   <NavbarButton
                     href="/login"

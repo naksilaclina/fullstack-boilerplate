@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { compare } from "bcrypt";
 import { UserModel, type IUserDocument } from "@naksilaclina/mongodb";
-import { signAccessToken, signRefreshToken, createEnhancedSession } from "~api/services/auth";
+import { generateAccessToken, generateRefreshToken, createEnhancedSession } from "~api/services/auth";
 import { validateEmail, validatePassword, handleValidationErrors } from "~api/utils/validation.utils";
 import { authRateLimiter } from "~api/middlewares";
 import { v4 as uuidv4 } from "uuid";
@@ -118,20 +118,20 @@ router.post(
       }, req);
 
       // Generate tokens with session ID
-      const accessToken = signAccessToken({
+      const accessToken = generateAccessToken({
         userId: user._id.toString(),
         email: user.email,
         role: user.role,
         sessionId: sessionId
       });
       
-      const refreshToken = signRefreshToken(user as IUserDocument);
+      const refreshToken = await generateRefreshToken(user._id.toString(), sessionId);
 
       // Set refresh token in HTTP-only cookie
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: "strict",
+        sameSite: "lax", // Changed from "strict" to "lax" to allow refresh token to be sent on page refresh
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
       });
@@ -140,7 +140,7 @@ router.post(
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: "strict",
+        sameSite: "lax", // Changed from "strict" to "lax" to allow access token to be sent on page refresh
         maxAge: 15 * 60 * 1000, // 15 minutes
         path: "/",
       });

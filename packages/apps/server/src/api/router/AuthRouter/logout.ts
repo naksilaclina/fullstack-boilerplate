@@ -37,7 +37,7 @@ router.post("/", async (req: Request, res: Response) => {
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "strict",
+      sameSite: "lax", // Changed from "strict" to "lax" for consistency
       path: "/",
     });
 
@@ -45,7 +45,7 @@ router.post("/", async (req: Request, res: Response) => {
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "strict",
+      sameSite: "lax", // Changed from "strict" to "lax" for consistency
       path: "/",
     });
 

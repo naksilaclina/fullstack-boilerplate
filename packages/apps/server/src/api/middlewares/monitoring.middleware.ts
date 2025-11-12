@@ -92,37 +92,3 @@ export function monitoringMiddleware(options: MonitoringOptions = {}) {
     next();
   };
 }
-
-/**
- * Basic security monitoring without blocking requests
- */
-export function securityMonitoringMiddleware(req: Request, res: Response, next: NextFunction) {
-  // Monitor for basic suspicious patterns without blocking
-  const suspiciousPatterns = [
-    /\.\./,  // Directory traversal
-    /<script/i,  // XSS attempts
-    /union.*select/i,  // SQL injection
-  ];
-
-  const requestData = JSON.stringify({
-    url: req.url,
-    body: req.body,
-    query: req.query
-  });
-
-  const suspiciousActivity = suspiciousPatterns.some(pattern => 
-    pattern.test(requestData)
-  );
-
-  if (suspiciousActivity) {
-    console.warn('Security Alert:', {
-      type: 'SUSPICIOUS_REQUEST',
-      timestamp: new Date().toISOString(),
-      ip: req.ip,
-      url: req.url,
-      method: req.method
-    });
-  }
-
-  next();
-}

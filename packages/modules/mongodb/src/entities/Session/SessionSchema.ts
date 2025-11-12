@@ -26,11 +26,6 @@ const SessionSchema = new Schema(
       default: Date.now,
       index: true,
     },
-    suspiciousActivity: {
-      type: Boolean,
-      default: false,
-      index: true,
-    },
     geoLocation: {
       country: {
         type: String,
@@ -88,7 +83,6 @@ SessionSchema.index({ userId: 1 });
 SessionSchema.index({ refreshTokenId: 1 });
 SessionSchema.index({ deviceFingerprint: 1 });
 SessionSchema.index({ userId: 1, deviceFingerprint: 1 });
-SessionSchema.index({ userId: 1, suspiciousActivity: 1 });
 SessionSchema.index({ lastActivity: 1 });
 
 // Compound index for concurrent session management

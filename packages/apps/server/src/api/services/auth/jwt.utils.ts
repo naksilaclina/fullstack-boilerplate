@@ -1,8 +1,6 @@
 import jwt from "jsonwebtoken";
-import { IUserDocument, SessionModel } from "@naksilaclina/mongodb";
-import { jwtSecret, jwtRefreshSecret } from "~config";
-import crypto from "crypto";
-
+import { SessionModel } from "@naksilaclina/mongodb";
+import { jwtSecret, jwtRefreshSecret } from "../../../config";
 import { isDevelopment } from "~config";
 
 // Validate that secrets are properly configured
@@ -29,91 +27,50 @@ export interface JwtPayload {
 }
 
 /**
- * Sign an access token JWT
+ * Generate access token
  */
-export function signAccessToken(user: IUserDocument): string;
-export function signAccessToken(payload: { userId: string; email?: string; role?: string; sessionId?: string }): string;
-export function signAccessToken(userOrPayload: IUserDocument | { userId: string; email?: string; role?: string; sessionId?: string }): string {
-  let payload: JwtPayload;
-  
-  // Check if it's an IUserDocument (has _id property)
-  if ('_id' in userOrPayload) {
-    const user = userOrPayload as IUserDocument;
-    payload = {
-      userId: user._id.toString(),
-      email: user.email,
-      role: user.role,
-    };
-  } else {
-    // It's a plain object with sessionId
-    const customPayload = userOrPayload as { userId: string; email?: string; role?: string; sessionId?: string };
-    payload = {
-      userId: customPayload.userId,
-      email: customPayload.email || '',
-      role: customPayload.role || 'user',
-      sessionId: customPayload.sessionId,
-    };
-  }
-
+export function generateAccessToken(payload: JwtPayload): string {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "15m", // Short-lived access token
     issuer: "naksilaclina",
     audience: "naksilaclina-users",
   });
 }
 
 /**
- * Sign a refresh token JWT
+ * Generate refresh token
  */
-export function signRefreshToken(user: IUserDocument): string;
-export function signRefreshToken(user: { _id: any; email: string; role: string }): string;
-export function signRefreshToken(user: IUserDocument | { _id: any; email: string; role: string }): string {
-  const payload: JwtPayload = {
-    userId: user._id.toString(),
-    email: user.email,
-    role: user.role,
-  };
-
-  // Add a random jti (JWT ID) for refresh token rotation
-  const jti = crypto.randomBytes(16).toString("hex");
+export async function generateRefreshToken(userId: string, sessionId?: string): Promise<string> {
+  // Use the provided session ID as jti, or generate a random one if not provided
+  const jti = sessionId || Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   
-  return jwt.sign(
-    {
-      ...payload,
-      jti,
-    },
-    JWT_REFRESH_SECRET,
-    {
-      expiresIn: "7d",
-      issuer: "naksilaclina",
-      audience: "naksilaclina-users",
-    }
-  );
+  const token = jwt.sign({ userId, jti }, JWT_REFRESH_SECRET, {
+    expiresIn: "7d", // Longer-lived refresh token
+    issuer: "naksilaclina",
+    audience: "naksilaclina-users",
+  });
+  
+  return token;
 }
 
 /**
- * Verify an access token JWT
+ * Verify access token
  */
 export function verifyAccessToken(token: string): JwtPayload | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET, {
       issuer: "naksilaclina",
       audience: "naksilaclina-users",
-    });
+    }) as JwtPayload;
     
-    // Type guard to ensure decoded is a JwtPayload
-    if (typeof decoded === 'object' && decoded !== null && 'userId' in decoded) {
-      return decoded as JwtPayload;
-    }
-    
-    return null;
+    return decoded;
   } catch (error) {
     return null;
   }
 }
 
 /**
- * Verify a refresh token JWT with enhanced security checks
+ * Verify refresh token
  */
 export async function verifyRefreshToken(token: string): Promise<(JwtPayload & { jti: string }) | null> {
   try {
@@ -129,26 +86,27 @@ export async function verifyRefreshToken(token: string): Promise<(JwtPayload & {
     
     const payload = decoded as JwtPayload & { jti: string };
     
-    // Enhanced session validation
-    const session = await SessionModel.findOne({ 
+    // Enhanced session validation with retry logic for refresh token rotation
+    let session = await SessionModel.findOne({ 
       refreshTokenId: payload.jti,
       userId: payload.userId,
       expiresAt: { $gt: new Date() }
     });
     
-    // If session doesn't exist, is invalidated, or expired
+    // If session doesn't exist, wait a short time and try again (handles refresh token rotation)
+    if (!session) {
+      // Wait 100ms and try again
+      await new Promise(resolve => setTimeout(resolve, 100));
+      session = await SessionModel.findOne({ 
+        refreshTokenId: payload.jti,
+        userId: payload.userId,
+        expiresAt: { $gt: new Date() }
+      });
+    }
+    
+    // If session still doesn't exist, is invalidated, or expired
     if (!session || session.invalidatedAt) {
       return null;
-    }
-
-    // Check for suspicious activity
-    if (session.suspiciousActivity) {
-      console.warn('[SECURITY] Refresh token used for suspicious session:', {
-        userId: payload.userId,
-        sessionId: payload.jti,
-        timestamp: new Date().toISOString()
-      });
-      // Still allow refresh but log the event
     }
     
     return payload;

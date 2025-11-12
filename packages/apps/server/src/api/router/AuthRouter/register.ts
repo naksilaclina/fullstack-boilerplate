@@ -2,12 +2,32 @@ import { Router, Request, Response } from "express";
 import { body, validationResult } from "express-validator";
 import { hash } from "bcrypt";
 import { UserModel, type IUserDocument } from "@naksilaclina/mongodb";
-import { signAccessToken, signRefreshToken } from "~api/services/auth";
+import { generateAccessToken, generateRefreshToken, createEnhancedSession } from "~api/services/auth";
 import { validateEmail, validatePassword, validateName, handleValidationErrors } from "~api/utils/validation.utils";
 import { authRateLimiter } from "~api/middlewares";
+import { v4 as uuidv4 } from "uuid";
 
 const router = Router();
 const SALT_ROUNDS = 10;
+
+// Helper function to get client IP address
+const getClientIP = (req: Request): string => {
+  // Check for various headers that might contain the real client IP
+  const forwarded = req.headers['x-forwarded-for'] as string;
+  const realIP = req.headers['x-real-ip'] as string;
+  
+  if (forwarded) {
+    // x-forwarded-for can contain multiple IPs, take the first one
+    return forwarded.split(',')[0].trim();
+  }
+  
+  if (realIP) {
+    return realIP.trim();
+  }
+  
+  // Fallback to req.ip which should work correctly with trust proxy setting
+  return req.ip;
+};
 
 import { isDevelopment, isProduction } from "../../../config";
 
@@ -68,15 +88,33 @@ router.post(
       // Save the user
       const savedUser = await user.save();
 
-      // Generate tokens
-      const accessToken = signAccessToken(savedUser as IUserDocument);
-      const refreshToken = signRefreshToken(savedUser as IUserDocument);
+      // Create enhanced session record first
+      const sessionId = uuidv4();
+      const clientIP = getClientIP(req);
+      
+      const session = await createEnhancedSession({
+        userId: savedUser._id.toString(),
+        refreshTokenId: sessionId,
+        ipAddress: clientIP,
+        userAgent: req.get("User-Agent"),
+        sessionType: 'web',
+        maxConcurrentSessions: 5
+      }, req);
+
+      // Generate tokens with session ID
+      const accessToken = generateAccessToken({
+        userId: savedUser._id.toString(),
+        email: savedUser.email,
+        role: savedUser.role,
+        sessionId: sessionId
+      });
+      const refreshToken = await generateRefreshToken(savedUser._id.toString(), sessionId);
 
       // Set refresh token in HTTP-only cookie
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: "strict",
+        sameSite: "lax", // Changed from "strict" to "lax" to allow refresh token to be sent on page refresh
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
       });

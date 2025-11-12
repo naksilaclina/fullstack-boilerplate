@@ -1,6 +1,4 @@
-import { config } from '../../config';
-
-const API_BASE_URL = config.api.baseUrl;
+import { apiClient } from '@/utils/apiClient';
 
 interface LoginCredentials {
   email: string;
@@ -39,18 +37,29 @@ interface SessionsResponse {
 }
 
 /**
+ * Refresh auth tokens
+ */
+export async function refreshAuth(): Promise<boolean> {
+  try {
+    const response = await apiClient.post("/auth/refresh");
+    return response.ok;
+  } catch (error) {
+    console.log('❌ refreshAuth: Failed to refresh tokens', error);
+    // If it's a network error, we might want to retry
+    if (error instanceof TypeError && error.message === "Failed to fetch") {
+      // Network error - could be temporary
+      console.log('🔄 refreshAuth: Network error, might be temporary');
+    }
+    return false;
+  }
+}
+
+/**
  * Login user
  */
 export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include", // Include cookies in the request
-      body: JSON.stringify(credentials),
-    });
+    const response = await apiClient.post("/auth/login", credentials);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -87,14 +96,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
  * Register user
  */
 export async function register(data: RegisterData): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include", // Include cookies in the request
-    body: JSON.stringify(data),
-  });
+  const response = await apiClient.post("/auth/register", data);
 
   if (!response.ok) {
     const error = await response.json();
@@ -116,10 +118,7 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
  * Logout user
  */
 export async function logout(): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-    method: "POST",
-    credentials: "include", // Include cookies in the request
-  });
+  const response = await apiClient.post("/auth/logout");
 
   if (!response.ok) {
     const error = await response.json();
@@ -134,13 +133,10 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Get current user profile
+ * Get current user profile with automatic token refresh
  */
 export async function getProfile(): Promise<AuthResponse["user"]> {
-  const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-    method: "GET",
-    credentials: "include", // Include cookies in the request
-  });
+  const response = await apiClient.get("/auth/profile");
 
   if (!response.ok) {
     // For 401 errors during auth check, throw a simple error without detailed message
@@ -164,10 +160,7 @@ export async function getProfile(): Promise<AuthResponse["user"]> {
  * Get all active sessions for the current user
  */
 export async function getSessions(): Promise<SessionsResponse> {
-  const response = await fetch(`${API_BASE_URL}/auth/sessions`, {
-    method: "GET",
-    credentials: "include", // Include cookies in the request
-  });
+  const response = await apiClient.get("/auth/sessions");
 
   if (!response.ok) {
     const error = await response.json();
@@ -185,10 +178,7 @@ export async function getSessions(): Promise<SessionsResponse> {
  * Revoke a specific session
  */
 export async function revokeSession(sessionId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/auth/sessions/${sessionId}`, {
-    method: "DELETE",
-    credentials: "include", // Include cookies in the request
-  });
+  const response = await apiClient.delete(`/auth/sessions/${sessionId}`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -208,10 +198,7 @@ export async function revokeSession(sessionId: string): Promise<void> {
  * Revoke all sessions except the current one
  */
 export async function revokeAllSessions(): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/auth/sessions`, {
-    method: "DELETE",
-    credentials: "include", // Include cookies in the request
-  });
+  const response = await apiClient.delete("/auth/sessions");
 
   if (!response.ok) {
     const error = await response.json();

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken, JwtPayload, generateDeviceFingerprint, checkSuspiciousActivity, updateSessionActivity, markSessionSuspicious } from "~api/services/auth";
+import { verifyAccessToken, JwtPayload, generateDeviceFingerprint, updateSessionActivity } from "~api/services/auth";
 import { SessionModel } from "@naksilaclina/mongodb";
 
 
@@ -9,7 +9,6 @@ declare global {
       user?: JwtPayload;
       sessionId?: string;
       deviceFingerprint?: string;
-      suspiciousActivity?: boolean;
     }
   }
 }
@@ -68,36 +67,9 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
 
     // Check for device fingerprint mismatch
     if (session.deviceFingerprint !== deviceFingerprint) {
-      await markSessionSuspicious(session.refreshTokenId, "Device fingerprint mismatch");
-      
       return res.status(401).json({ 
         error: "Session security violation detected. Please log in again.",
         code: "DEVICE_MISMATCH"
-      });
-    }
-
-    // Check for suspicious activity
-    const clientIP = req.ip || req.connection.remoteAddress || '';
-    const suspiciousChecks = await checkSuspiciousActivity(
-      decoded.userId, 
-      deviceFingerprint, 
-      clientIP
-    );
-
-    // If multiple suspicious indicators, mark as suspicious
-    const suspiciousCount = Object.values(suspiciousChecks).filter(Boolean).length;
-    if (suspiciousCount >= 2) {
-      await markSessionSuspicious(session.refreshTokenId, `Multiple suspicious indicators: ${JSON.stringify(suspiciousChecks)}`);
-      req.suspiciousActivity = true;
-      
-      // Log security event
-      console.warn('[SECURITY] Suspicious activity detected:', {
-        userId: decoded.userId,
-        sessionId: session.refreshTokenId,
-        checks: suspiciousChecks,
-        ip: clientIP,
-        userAgent: req.get('User-Agent'),
-        timestamp: new Date().toISOString()
       });
     }
 

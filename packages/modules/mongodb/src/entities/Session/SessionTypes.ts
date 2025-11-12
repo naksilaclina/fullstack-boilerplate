@@ -13,7 +13,6 @@ export interface ISession extends Document {
   // Enhanced security fields
   deviceFingerprint: string;
   lastActivity: Date;
-  suspiciousActivity: boolean;
   geoLocation: IGeoLocation;
   maxConcurrentSessions: number;
   sessionType: "web" | "mobile" | "api";

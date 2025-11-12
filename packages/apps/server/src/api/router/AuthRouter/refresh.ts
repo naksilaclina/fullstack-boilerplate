@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { SessionModel, UserModel, type IUserDocument } from "@naksilaclina/mongodb";
-import { signAccessToken, signRefreshToken, verifyRefreshToken, invalidateRefreshToken } from "~api/services/auth";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken, invalidateRefreshToken, createEnhancedSession } from "~api/services/auth";
 import { v4 as uuidv4 } from "uuid";
 
 const router = Router();
@@ -90,30 +90,34 @@ router.post("/", async (req: Request, res: Response) => {
     // Invalidate the old refresh token (rotation)
     await invalidateRefreshToken(decoded.jti);
 
-    // Generate new tokens
-    const newAccessToken = signAccessToken(user as IUserDocument);
-    const newRefreshToken = signRefreshToken(user as IUserDocument);
-
     // Create new session record
     const sessionId = uuidv4();
     const clientIP = getClientIP(req);
     
-    const session = new SessionModel({
+    const session = await createEnhancedSession({
       userId: user._id.toString(),
       refreshTokenId: sessionId,
+      ipAddress: clientIP,
       userAgent: req.get("User-Agent"),
-      ipAddr: clientIP,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
-    
-    await session.save();
+      sessionType: 'web',
+      maxConcurrentSessions: 5
+    }, req);
     devLog("New session created during refresh", { sessionId, userId: user._id, clientIP });
+
+    // Generate new tokens with session ID
+    const newAccessToken = generateAccessToken({
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      sessionId: sessionId
+    });
+    const newRefreshToken = await generateRefreshToken(user._id.toString(), sessionId);
 
     // Set new refresh token in HTTP-only cookie
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "strict",
+      sameSite: "lax", // Changed from "strict" to "lax" to allow refresh token to be sent on page refresh
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: "/",
     });
@@ -122,7 +126,7 @@ router.post("/", async (req: Request, res: Response) => {
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "strict",
+      sameSite: "lax", // Changed from "strict" to "lax" to allow access token to be sent on page refresh
       maxAge: 15 * 60 * 1000, // 15 minutes
       path: "/",
     });

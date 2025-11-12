@@ -1,44 +1,58 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { NavbarButton } from "@/components/ui/resizable-navbar";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/auth";
 import { logout as logoutService } from "@/services/auth";
 import { toastService } from "@/services/ui";
-import { getPostLogoutRedirectPath } from "@/utils";
 
-export default function LogoutButton() {
+interface LogoutButtonProps {
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  size?: "default" | "sm" | "lg" | "icon";
+  className?: string;
+  children?: React.ReactNode;
+}
+
+export default function LogoutButton({
+  variant = "outline",
+  size = "default",
+  className = "",
+  children = "Logout"
+}: LogoutButtonProps) {
   const router = useRouter();
-  const { logout, isAuthenticated } = useAuth();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     try {
       await logoutService();
+      // Clear local auth state
       logout();
-      toastService.success({
-        message: "Logout Successful",
-        description: "You have been successfully logged out.",
-      });
-      router.push(getPostLogoutRedirectPath());
-    } catch (error: any) {
-      // Even if the API call fails, we still log out the user locally
-      logout();
+      
       toastService.success({
         message: "Logged Out",
-        description: "You have been logged out (local only).",
+        description: "You have been successfully logged out."
       });
-      router.push(getPostLogoutRedirectPath());
+      
+      // Redirect to login page
+      router.push("/login");
+      // Refresh the page to ensure clean state
+      router.refresh();
+    } catch (error: any) {
+      toastService.error({
+        message: "Logout Failed",
+        description: error.message || "Failed to logout. Please try again."
+      });
     }
   };
 
-  // Don't render the button if user is not authenticated
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
-    <NavbarButton variant="secondary" onClick={handleLogout}>
-      Logout
-    </NavbarButton>
+    <Button
+      variant={variant}
+      size={size}
+      className={className}
+      onClick={handleLogout}
+    >
+      {children}
+    </Button>
   );
 }
