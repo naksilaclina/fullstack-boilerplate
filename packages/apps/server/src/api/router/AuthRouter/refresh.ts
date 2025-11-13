@@ -34,13 +34,90 @@ const devLog = (...args: any[]) => {
 };
 
 /**
+ * OPTIONS /api/v1/auth/refresh
+ * Handle CORS preflight requests
+ */
+router.options("/", (req: Request, res: Response) => {
+  devLog("✅ OPTIONS preflight request to refresh endpoint", {
+    timestamp: new Date().toISOString(),
+    origin: req.get("Origin"),
+    method: req.get("Access-Control-Request-Method"),
+    headers: req.get("Access-Control-Request-Headers")
+  });
+  
+  // CORS headers are already handled by the CORS middleware
+  // Just return 204 No Content for preflight
+  return res.status(204).end();
+});
+
+/**
+ * GET /api/v1/auth/refresh
+ * Handle GET requests to refresh endpoint (unexpected)
+ */
+router.get("/", (req: Request, res: Response) => {
+  // Log the unexpected GET request for debugging
+  console.error("🚨 UNEXPECTED GET request to refresh endpoint - FULL DETAILS:", {
+    timestamp: new Date().toISOString(),
+    method: req.method,
+    url: req.originalUrl,
+    userAgent: req.get("User-Agent"),
+    ip: getClientIP(req),
+    referer: req.get("Referer"),
+    origin: req.get("Origin"),
+    contentType: req.get("Content-Type"),
+    accept: req.get("Accept"),
+    allHeaders: req.headers,
+    query: req.query,
+    body: req.body,
+    cookies: req.cookies
+  });
+  
+  // Return 405 Method Not Allowed for GET requests with detailed information
+  return res.status(405).json({
+    error: "Method not allowed. Use POST method to refresh tokens.",
+    message: "The refresh endpoint only accepts POST requests. This typically happens when a browser or client makes a direct request to this endpoint instead of using the application's refresh functionality.",
+    method: req.method,
+    url: req.originalUrl,
+    timestamp: new Date().toISOString(),
+    solution: "Make sure your application is using the proper refresh token mechanism through the API client."
+  });
+});
+
+/**
+ * HEAD /api/v1/auth/refresh
+ * Handle HEAD requests to refresh endpoint (unexpected)
+ */
+router.head("/", (req: Request, res: Response) => {
+  // Log the unexpected HEAD request for debugging
+  devLog("Unexpected HEAD request to refresh endpoint", {
+    timestamp: new Date().toISOString(),
+    userAgent: req.get("User-Agent"),
+    ip: req.ip
+  });
+  
+  // Return 405 Method Not Allowed for HEAD requests
+  return res.status(405).json({
+    error: "Method not allowed. Use POST method to refresh tokens.",
+    message: "The refresh endpoint only accepts POST requests. This typically happens when a browser or client makes a direct request to this endpoint instead of using the application's refresh functionality.",
+    method: req.method,
+    url: req.originalUrl,
+    timestamp: new Date().toISOString(),
+    solution: "Make sure your application is using the proper refresh token mechanism through the API client."
+  });
+});
+
+/**
  * POST /api/v1/auth/refresh
  * Refresh access token using refresh token
  */
 router.post("/", async (req: Request, res: Response) => {
   try {
-    devLog("Token refresh attempt started", { 
-      timestamp: new Date().toISOString()
+    devLog("POST Token refresh attempt started", { 
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      url: req.originalUrl,
+      userAgent: req.get("User-Agent"),
+      ip: getClientIP(req)
     });
 
     const refreshToken = req.cookies.refreshToken;
@@ -132,6 +209,12 @@ router.post("/", async (req: Request, res: Response) => {
     });
 
     // Return success message
+    devLog("POST Token refresh completed successfully", {
+      timestamp: new Date().toISOString(),
+      userId: user._id,
+      sessionId: sessionId
+    });
+    
     return res.status(200).json({
       message: "Token refresh successful",
     });

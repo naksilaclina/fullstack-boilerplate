@@ -66,7 +66,7 @@ export default function AuthGuard({
         })
         .catch((error) => {
           // Refresh failed, redirect to login
-          console.log('🔄 AuthGuard redirecting to login - authentication required');
+          console.log('🔄 AuthGuard redirecting to login - authentication required', error);
           toastService.error({
             message: "Authentication Required",
             description: "Please log in to access this page."

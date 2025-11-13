@@ -201,6 +201,7 @@ export const monorepoConfigSchema = Joi.object({
   // Monitoring & Observability
   SENTRY_DSN: Joi.string()
     .uri()
+    .allow('') // Allow empty strings
     .when('NODE_ENV', {
       is: 'production',
       then: Joi.optional(),

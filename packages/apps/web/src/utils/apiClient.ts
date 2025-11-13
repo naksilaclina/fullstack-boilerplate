@@ -1,5 +1,3 @@
-import { refreshAuth } from "@/services/auth";
-
 // Track if we're currently refreshing token to prevent multiple simultaneous refreshes
 let isRefreshing = false;
 // Track requests that need to be retried after token refresh
@@ -18,6 +16,55 @@ const processQueue = (error: any, token: string | null = null) => {
   });
   
   failedQueue = [];
+};
+
+/**
+ * Direct refresh auth function to avoid circular dependency
+ */
+const directRefreshAuth = async (): Promise<boolean> => {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
+    console.log('🔄 directRefreshAuth: Making POST request to refresh endpoint', {
+      url: `${baseUrl}/auth/refresh`,
+      timestamp: new Date().toISOString()
+    });
+    
+    const response = await fetch(`${baseUrl}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    
+    // Log response details
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
+    }
+    
+    if (!response.ok) {
+      console.log('❌ directRefreshAuth: Refresh request failed', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        responseData
+      });
+    } else {
+      console.log('✅ directRefreshAuth: Refresh request successful', {
+        status: response.status,
+        responseData
+      });
+    }
+    
+    return response.ok;
+  } catch (error) {
+    console.log('❌ directRefreshAuth: Failed to refresh tokens', error);
+    return false;
+  }
 };
 
 /**
@@ -52,7 +99,7 @@ class ApiClient {
       isRefreshing = true;
       
       try {
-        const refreshed = await refreshAuth();
+        const refreshed = await directRefreshAuth();
         isRefreshing = false;
         
         if (refreshed) {

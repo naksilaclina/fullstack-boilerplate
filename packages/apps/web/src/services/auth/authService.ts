@@ -41,7 +41,27 @@ interface SessionsResponse {
  */
 export async function refreshAuth(): Promise<boolean> {
   try {
-    const response = await apiClient.post("/auth/refresh");
+    // Use direct fetch to avoid circular dependency with apiClient
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
+    console.log('🔄 refreshAuth: Making POST request to refresh endpoint');
+    const response = await fetch(`${baseUrl}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    
+    if (!response.ok) {
+      console.log('❌ refreshAuth: Refresh request failed', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
+    } else {
+      console.log('✅ refreshAuth: Refresh request successful');
+    }
+    
     return response.ok;
   } catch (error) {
     console.log('❌ refreshAuth: Failed to refresh tokens', error);
