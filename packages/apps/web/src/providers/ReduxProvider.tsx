@@ -38,8 +38,12 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
       } catch (error: any) {
         console.log('❌ ReduxProvider: Auth initialization error', error);
         isReduxProviderAuthInitialized = true;
-        // If initial auth check fails with UNAUTHENTICATED, try to refresh tokens
-        if (error.payload === 'UNAUTHENTICATED') {
+        // If initial auth check fails with UNAUTHENTICATED, only try to refresh tokens 
+        // if we're not on the login page
+        const currentPath = window.location.pathname;
+        const isLoginPage = currentPath === '/login' || currentPath === '/login/';
+        
+        if (error.payload === 'UNAUTHENTICATED' && !isLoginPage) {
           // Try to refresh auth tokens
           try {
             console.log('🔄 ReduxProvider: Trying to refresh tokens...');
@@ -56,6 +60,20 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
     };
     
     initAuth();
+    
+    // Set up periodic auth status check
+    const interval = setInterval(() => {
+      // Only check if we're not on the login page and auth has been initialized
+      const currentPath = window.location.pathname;
+      const isLoginPage = currentPath === '/login' || currentPath === '/login/';
+      
+      if (isReduxProviderAuthInitialized && !isLoginPage) {
+        store.dispatch(checkAuthStatus());
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
   return <Provider store={store}>{children}</Provider>;

@@ -22,7 +22,8 @@ const UserSchema = new Schema(
     password: {
       type: String,
       required: true,
-      minlength: 6,
+      // Updated to match our stronger requirements
+      minlength: 8,
     },
     isActive: {
       type: Boolean,

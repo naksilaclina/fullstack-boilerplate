@@ -130,7 +130,12 @@ class ApiClient {
     });
     
     // If unauthorized, try to refresh token
-    if (response.status === 401) {
+    // BUT only if this is NOT a login request, as login failures should not trigger token refresh
+    const url = typeof input === 'string' ? input : input.url;
+    const isLoginRequest = url.includes('/auth/login');
+    const isRefreshRequest = url.includes('/auth/refresh');
+    
+    if (response.status === 401 && !isLoginRequest && !isRefreshRequest) {
       // If already refreshing, add to queue
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -169,9 +174,11 @@ class ApiClient {
     }
     
     // If CSRF token is invalid, fetch a new one and retry
-    if (response.status === 403 && (await response.text()).includes('invalid csrf token')) {
+    if (response.status === 403 && (await response.text()).includes('CSRF')) {
+      console.log('🔄 CSRF token invalid, fetching new token and retrying...');
       await fetchCsrfToken();
-      // Retry the request with the new token
+      
+      // Retry the request with new CSRF token
       response = await fetch(input, {
         ...init,
         credentials: "include",
@@ -188,55 +195,59 @@ class ApiClient {
   /**
    * GET request
    */
-  async get(url: string, options?: RequestInit): Promise<Response> {
-    return this.fetch(`${this.baseUrl}${url}`, {
-      ...options,
+  async get(endpoint: string): Promise<Response> {
+    const url = `${this.baseUrl}${endpoint}`;
+    return this.fetch(url, {
       method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
   }
   
   /**
    * POST request
    */
-  async post(url: string, body?: any, options?: RequestInit): Promise<Response> {
-    return this.fetch(`${this.baseUrl}${url}`, {
-      ...options,
+  async post(endpoint: string, data?: any): Promise<Response> {
+    const url = `${this.baseUrl}${endpoint}`;
+    return this.fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...options?.headers,
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
   
   /**
    * PUT request
    */
-  async put(url: string, body?: any, options?: RequestInit): Promise<Response> {
-    return this.fetch(`${this.baseUrl}${url}`, {
-      ...options,
+  async put(endpoint: string, data?: any): Promise<Response> {
+    const url = `${this.baseUrl}${endpoint}`;
+    return this.fetch(url, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        ...options?.headers,
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
   
   /**
    * DELETE request
    */
-  async delete(url: string, options?: RequestInit): Promise<Response> {
-    return this.fetch(`${this.baseUrl}${url}`, {
-      ...options,
+  async delete(endpoint: string): Promise<Response> {
+    const url = `${this.baseUrl}${endpoint}`;
+    return this.fetch(url, {
       method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
   }
 }
 
-// Export a singleton instance
-export const apiClient = new ApiClient(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1");
+// Create and export the api client instance
+const apiClient = new ApiClient(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1");
 
-export default ApiClient;
+export { apiClient };

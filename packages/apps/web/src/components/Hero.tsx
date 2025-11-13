@@ -5,14 +5,21 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth";
 import { NavbarButton } from "@/components/ui/resizable-navbar";
 import { UserRole } from "@/lib";
+import { useAppDispatch } from "@/store";
+import { refreshAuthStatus } from "@/store/authSlice";
 
 export default function Hero() {
   const router = useRouter();
-  const { user, isAuthenticated, loading } = useAuth();
+  const dispatch = useAppDispatch();
+  const { user, isAuthenticated, loading, isReady } = useAuth();
 
-  // Removed the useEffect that was automatically redirecting authenticated users
-  // The home page should be accessible to all users, including authenticated ones
-  // Users can navigate to their respective pages using the navigation menu
+  // Check auth status on component mount to ensure session is still valid
+  useEffect(() => {
+    if (isReady && !isAuthenticated) {
+      // Try to refresh auth status if user appears unauthenticated
+      dispatch(refreshAuthStatus());
+    }
+  }, [isReady, isAuthenticated, dispatch]);
 
   if (loading) {
     return (

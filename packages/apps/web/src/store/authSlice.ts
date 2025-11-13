@@ -1,43 +1,30 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { getProfile, refreshAuth } from '@/services/auth';
-
-export interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-}
+import type { User } from './types.ts';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  loading: boolean;
-  initializing: boolean;        // Uygulama başlarken true
-  backgroundValidating: boolean; // Background validation için
+  loading: boolean;          // For active loading states (show spinners)
+  backgroundValidating: boolean; // For background validation (don't show spinners)
+  initializing: boolean;     // For initial app load auth check
   error: string | null;
 }
 
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  loading: false,
-  initializing: true,           // Uygulama başlarken true
-  backgroundValidating: false,  // Background validation için
-  error: null
+  loading: true,          // Start with loading true during initial check
+  backgroundValidating: false,
+  initializing: true,     // Start with initializing true
+  error: null,
 };
 
-// Async thunk to check auth status with backend
+// Async thunk to check auth status
 export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
-  async (_, { rejectWithValue, getState }) => {
-    const state = getState() as { auth: AuthState };
-    
-    // Prevent duplicate calls if already loading or validating
-    if (state.auth.loading || state.auth.backgroundValidating) {
-      // Instead of rejecting, resolve with current state to prevent race conditions
-      return Promise.resolve(state.auth.user);
-    }
+  async (_, { rejectWithValue }) => {
+    console.log('🔄 checkAuthStatus: Starting auth check...');
     
     try {
       console.log('🔄 checkAuthStatus: Calling getProfile...');
@@ -112,12 +99,13 @@ export const authSlice = createSlice({
       state.backgroundValidating = false; // Background validation bitti
       state.error = null;
       console.log('✅ logout: User logged out');
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
+      // Check auth status
       .addCase(checkAuthStatus.pending, (state) => {
-        // İlk yükleme mi yoksa background validation mı?
+        // Only show loading spinner for initial auth check, not background validation
         if (state.initializing) {
           state.loading = true;
         } else {
@@ -127,17 +115,14 @@ export const authSlice = createSlice({
         console.log('🔄 checkAuthStatus: Pending');
       })
       .addCase(checkAuthStatus.fulfilled, (state, action) => {
-        // Handle case where payload might be null (from our Promise.resolve fix)
-        if (action.payload) {
-          state.user = {
-            id: action.payload.id,
-            firstName: action.payload.firstName,
-            lastName: action.payload.lastName,
-            email: action.payload.email,
-            role: action.payload.role
-          };
-          state.isAuthenticated = true;
-        }
+        state.user = {
+          id: action.payload.id,
+          firstName: action.payload.firstName,
+          lastName: action.payload.lastName,
+          email: action.payload.email,
+          role: action.payload.role
+        };
+        state.isAuthenticated = true;
         state.loading = false;
         state.initializing = false;        // Auth tamamlandı
         state.backgroundValidating = false; // Background validation bitti
@@ -150,11 +135,19 @@ export const authSlice = createSlice({
         state.loading = false;
         state.initializing = false;        // Auth tamamlandı (başarısız)
         state.backgroundValidating = false; // Background validation bitti
-        // Don't set error for UNAUTHENTICATED as it's expected when user is not logged in
+        // Don't set error for unauthenticated users as it's expected
         if (action.payload !== 'UNAUTHENTICATED') {
-          state.error = action.payload as string || 'Failed to check auth status';
+          state.error = action.payload as string || 'Failed to authenticate';
         }
         console.log('❌ checkAuthStatus: Rejected', action.payload);
+      })
+      
+      // Refresh auth status
+      .addCase(refreshAuthStatus.pending, (state) => {
+        // Always treat token refresh as background operation
+        state.backgroundValidating = true;
+        state.error = null;
+        console.log('🔄 refreshAuthStatus: Pending');
       })
       .addCase(refreshAuthStatus.fulfilled, (state, action) => {
         state.user = {

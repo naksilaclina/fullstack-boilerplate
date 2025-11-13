@@ -12,7 +12,8 @@
     "dev": "tsc && (concurrently \"tsc -w\" \"tsc-alias -w\")",
     "start": "node dist/index.js",
     "lint": "eslint src bin",
-    "seed": "cross-env NODE_ENV=development ts-node src/seed/index.ts"
+    "seed": "cross-env NODE_ENV=development ts-node src/seed/index.ts",
+    "migrate-passwords": "cross-env NODE_ENV=development ts-node src/migrations/update-user-passwords.ts"
   },
   "dependencies": {
     "mongoose": "^6.8.4"

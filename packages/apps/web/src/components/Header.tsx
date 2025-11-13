@@ -10,21 +10,41 @@ import {
   MobileNavToggle,
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/auth";
 import { LogoutButton } from "@/components";
 import { ThemeSwitch } from "@/components";
 import { useTheme } from "next-themes";
 import { UserRole } from "@/lib";
 import { usePathname } from "next/navigation";
+import { useAppDispatch } from "@/store";
+import { refreshAuthStatus } from "@/store/authSlice";
 
 export default function Header() {
   const { isAuthenticated, user, isReady } = useAuth();
+  const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   
   const isDev = process.env.NODE_ENV === "development";
+  
+  // Check auth status periodically to ensure session is still valid
+  useEffect(() => {
+    if (isReady && !isAuthenticated) {
+      // Try to refresh auth status if user appears unauthenticated
+      dispatch(refreshAuthStatus());
+    }
+    
+    // Set up an interval to periodically check auth status
+    const interval = setInterval(() => {
+      if (isReady && isAuthenticated) {
+        dispatch(refreshAuthStatus());
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+    
+    return () => clearInterval(interval);
+  }, [isReady, isAuthenticated, dispatch]);
   
   // Define navigation items
   const guestNavItems = [

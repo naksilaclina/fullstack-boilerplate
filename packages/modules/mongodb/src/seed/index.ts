@@ -66,9 +66,10 @@ async function seedUsers(maxRetries = 5, retryDelay = 2000) {
         console.log("Cleared existing users");
       }
 
-      // Create test user
+      // Create test user with strong password
       console.log("Creating test user...");
-      const testUserPassword = await hash("test123", SALT_ROUNDS);
+      // Updated to use a strong password that meets our requirements
+      const testUserPassword = await hash("Test123!@#", SALT_ROUNDS);
       const testUser = new UserModel({
         firstName: "Anıl",
         lastName: "Çalışkan",
@@ -80,9 +81,10 @@ async function seedUsers(maxRetries = 5, retryDelay = 2000) {
       await testUser.save();
       console.log("Created test user:", testUser.email);
 
-      // Create admin user
+      // Create admin user with strong password
       console.log("Creating admin user...");
-      const adminUserPassword = await hash("admin123", SALT_ROUNDS);
+      // Updated to use a strong password that meets our requirements
+      const adminUserPassword = await hash("Admin123!@#", SALT_ROUNDS);
       const adminUser = new UserModel({
         firstName: "Admin",
         lastName: "User",

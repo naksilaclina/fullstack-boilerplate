@@ -32,15 +32,18 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     setIsLoading(true);
-
+    
     try {
       const response = await registerService({ firstName, lastName, email, password });
       login(response.user); // Pass only the user object, not the accessToken
+      
       toastService.success({
         message: "Registration Successful",
         description: "Account created successfully! Welcome to our platform.",
       });
+      
       router.push("/dashboard"); // Redirect to dashboard or home page
     } catch (error: any) {
       toastService.error({
@@ -129,7 +132,7 @@ export default function RegisterPage() {
                     <Button 
                       variant="outline" 
                       className="flex-1"
-                      onClick={() => handleQuickLogin("naksilaclina@gmail.com", "test123")}
+                      onClick={() => handleQuickLogin("naksilaclina@gmail.com", "Test123!@#")}
                       disabled={isLoading}
                     >
                       Test User
@@ -137,7 +140,7 @@ export default function RegisterPage() {
                     <Button 
                       variant="outline" 
                       className="flex-1"
-                      onClick={() => handleQuickLogin("admin@example.com", "admin123")}
+                      onClick={() => handleQuickLogin("admin@example.com", "Admin123!@#")}
                       disabled={isLoading}
                     >
                       Admin User

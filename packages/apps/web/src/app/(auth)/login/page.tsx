@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/auth";
-import { login as loginService, getProfile } from "@/services/auth";
+import { login as loginService } from "@/services/auth";
 import { toastService } from "@/services/ui";
 import { authorizationService } from "@/services/auth";
 
@@ -73,18 +73,21 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
+      // Only login, don't try to get profile immediately
       const response = await loginService({ email, password });
-      // Get full user profile
-      const userProfile = await getProfile();
-      login(userProfile);
+      login(response.user);
 
       toastService.success({
         message: "Login Successful",
         description: "Welcome back! You have been successfully logged in."
       });
       
+      // Reset form fields after successful login
+      setEmail("");
+      setPassword("");
+      
       // Use our authorization service to determine redirect path
-      const redirectPath = authorizationService.getPostLoginRedirectPath(userProfile);
+      const redirectPath = authorizationService.getPostLoginRedirectPath(response.user);
       
       // Check if there's a redirect URL in the search params
       const redirectUrl = searchParams.get("redirect");
@@ -124,10 +127,9 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
+      // Only login, don't try to get profile immediately
       const response = await loginService({ email, password });
-      // Get full user profile
-      const userProfile = await getProfile();
-      login(userProfile);
+      login(response.user);
 
       toastService.success({
         message: "Login Successful",
@@ -139,7 +141,7 @@ export default function LoginPage() {
       setPassword("");
       
       // Use our authorization service to determine redirect path
-      const redirectPath = authorizationService.getPostLoginRedirectPath(userProfile);
+      const redirectPath = authorizationService.getPostLoginRedirectPath(response.user);
       
       // Check if there's a redirect URL in the search params
       const redirectUrl = searchParams.get("redirect");
@@ -213,7 +215,7 @@ export default function LoginPage() {
                     <Button
                       variant="outline"
                       className="flex-1"
-                      onClick={() => handleQuickLogin("naksilaclina@gmail.com", "test123")}
+                      onClick={() => handleQuickLogin("naksilaclina@gmail.com", "Test123!@#")}
                       disabled={isLoading}
                     >
                       Test User
@@ -221,7 +223,7 @@ export default function LoginPage() {
                     <Button
                       variant="outline"
                       className="flex-1"
-                      onClick={() => handleQuickLogin("admin@example.com", "admin123")}
+                      onClick={() => handleQuickLogin("admin@example.com", "Admin123!@#")}
                       disabled={isLoading}
                     >
                       Admin User
