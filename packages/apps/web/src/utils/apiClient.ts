@@ -3,6 +3,31 @@ let isRefreshing = false;
 // Track requests that need to be retried after token refresh
 let failedQueue: { resolve: (value: any) => void; reject: (reason?: any) => void }[] = [];
 
+// Store CSRF token
+let csrfToken: string | null = null;
+
+/**
+ * Fetch CSRF token from the server
+ */
+const fetchCsrfToken = async (): Promise<string | null> => {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
+    const response = await fetch(`${baseUrl.replace('/api/v1', '/api')}/csrf-token`, {
+      credentials: "include",
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      csrfToken = data.csrfToken;
+      return csrfToken;
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch CSRF token:', error);
+    return null;
+  }
+};
+
 /**
  * Process the queue of failed requests after token refresh
  */
@@ -34,6 +59,7 @@ const directRefreshAuth = async (): Promise<boolean> => {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
+        ...(csrfToken && { 'CSRF-Token': csrfToken }),
       },
     });
     
@@ -68,7 +94,7 @@ const directRefreshAuth = async (): Promise<boolean> => {
 };
 
 /**
- * Create an API client with automatic token refresh
+ * Create an API client with automatic token refresh and CSRF protection
  */
 class ApiClient {
   private baseUrl: string;
@@ -78,13 +104,29 @@ class ApiClient {
   }
   
   /**
-   * Make a fetch request with automatic token refresh
+   * Initialize CSRF protection by fetching the token
+   */
+  async initCsrfProtection(): Promise<void> {
+    await fetchCsrfToken();
+  }
+  
+  /**
+   * Make a fetch request with automatic token refresh and CSRF protection
    */
   async fetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+    // Ensure we have a CSRF token
+    if (!csrfToken) {
+      await fetchCsrfToken();
+    }
+    
     // Make the initial request
     let response = await fetch(input, {
       ...init,
       credentials: "include", // Always include credentials for auth
+      headers: {
+        ...(csrfToken && { 'CSRF-Token': csrfToken }),
+        ...init?.headers,
+      },
     });
     
     // If unauthorized, try to refresh token
@@ -108,6 +150,10 @@ class ApiClient {
           response = await fetch(input, {
             ...init,
             credentials: "include", // Always include credentials for auth
+            headers: {
+              ...(csrfToken && { 'CSRF-Token': csrfToken }),
+              ...init?.headers,
+            },
           });
         } else {
           // Refresh failed, clear queue with error
@@ -120,6 +166,20 @@ class ApiClient {
         processQueue(error, null);
         throw error;
       }
+    }
+    
+    // If CSRF token is invalid, fetch a new one and retry
+    if (response.status === 403 && (await response.text()).includes('invalid csrf token')) {
+      await fetchCsrfToken();
+      // Retry the request with the new token
+      response = await fetch(input, {
+        ...init,
+        credentials: "include",
+        headers: {
+          ...(csrfToken && { 'CSRF-Token': csrfToken }),
+          ...init?.headers,
+        },
+      });
     }
     
     return response;

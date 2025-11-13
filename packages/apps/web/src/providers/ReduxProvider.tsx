@@ -5,12 +5,25 @@ import { Provider } from 'react-redux';
 import { store } from '@/store';
 import { checkAuthStatus, refreshAuthStatus } from '@/store/authSlice';
 import { authManager } from '@/utils';
+import { apiClient } from '@/utils/apiClient';
 
 // Global flag to indicate when ReduxProvider has finished initializing auth
 let isReduxProviderAuthInitialized = false;
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    // Initialize CSRF protection
+    const initCsrf = async () => {
+      try {
+        await apiClient.initCsrfProtection();
+        console.log('✅ CSRF protection initialized');
+      } catch (error) {
+        console.error('❌ Failed to initialize CSRF protection:', error);
+      }
+    };
+    
+    initCsrf();
+    
     // Initialize auth only once using the auth manager
     const initAuth = async () => {
       console.log('🔄 ReduxProvider: Initializing auth...');

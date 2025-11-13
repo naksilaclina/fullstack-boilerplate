@@ -1,8 +1,9 @@
-import express, { type Application as ExpressApp } from "express";
+import express, { type Application as ExpressApp, Request, Response, NextFunction } from "express";
 import { type Server as HttpServer } from "http";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import csrf from "csurf";
 import {
   type Mongoose,
   connect as connectToMongodb,
@@ -48,6 +49,23 @@ export default class App {
     // Apply security middleware
     this.express.use(securityMiddleware);
     this.express.use(generalRateLimiter);
+    
+    // CSRF protection middleware
+    const csrfProtection = csrf({
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      }
+    });
+    
+    // Apply CSRF protection to API routes
+    this.express.use('/api', csrfProtection);
+    
+    // Route to provide CSRF token to frontend
+    this.express.get('/api/csrf-token', (req: Request, res: Response) => {
+      res.json({ csrfToken: (req as any).csrfToken() });
+    });
     
     console.log("Mounting API routes at /api/v1");
     this.express.use("/api/v1", api);
