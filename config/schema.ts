@@ -97,7 +97,11 @@ export const monorepoConfigSchema = Joi.object({
     .description('CSP violation report endpoint'),
 
   CSP_REPORT_ONLY: Joi.boolean()
-    .default(true)
+    .when('NODE_ENV', {
+      is: 'production',
+      then: Joi.boolean().default(false), // Enforce CSP in production
+      otherwise: Joi.boolean().default(true) // Report-only in dev/staging
+    })
     .description('CSP report-only mode'),
 
   SECURITY_LOG_LEVEL: Joi.string()

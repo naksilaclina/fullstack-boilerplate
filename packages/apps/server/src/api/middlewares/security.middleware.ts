@@ -13,10 +13,11 @@ const advancedHelmetConfig = {
       defaultSrc: ["'self'"],
       styleSrc: [
         "'self'",
-        "'unsafe-inline'", // Required for some CSS frameworks
+        // 'unsafe-inline' removed for enhanced security - only kept for development
+        ...(config.nodeEnv === 'development' ? ["'unsafe-inline'"] : []),
         "https://fonts.googleapis.com"
       ],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'"], // 'unsafe-inline' removed for enhanced security
       imgSrc: [
         "'self'",
         "data:",
@@ -60,7 +61,7 @@ const advancedHelmetConfig = {
 
   // Referrer Policy - Controls referrer information
   referrerPolicy: {
-    policy: 'strict-origin-when-cross-origin' as const
+    policy: 'no-referrer' as const
   },
 
   // X-XSS-Protection - Legacy XSS protection (deprecated but still useful)
