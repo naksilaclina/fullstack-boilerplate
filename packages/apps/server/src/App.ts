@@ -10,7 +10,7 @@ import {
 } from "@naksilaclina/mongodb";
 import { port, mongodbUri, config } from "./config";
 import { api } from "./api";
-import { securityMiddleware, generalRateLimiter } from "./api/middlewares";
+import { securityMiddleware, generalRateLimiter, csrfProtection } from "./api/middlewares";
 import { monitoringMiddleware } from "./api/middlewares/monitoring.middleware";
 import { sessionTrackingMiddleware } from "./api/middlewares/session.middleware";
 import { errorHandler, notFoundHandler } from "./api/middlewares/error.middleware";
@@ -50,16 +50,24 @@ export default class App {
     this.express.use(securityMiddleware);
     this.express.use(generalRateLimiter);
     
-    // CSRF protection middleware
-    const csrfProtection = csrf({
-      cookie: {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      }
+    // Apply CSRF protection to API routes, excluding authentication routes
+    this.express.use('/api/v1/auth/login', (req, res, next) => {
+      // Skip CSRF for login
+      next();
     });
-    
-    // Apply CSRF protection to API routes
+    this.express.use('/api/v1/auth/register', (req, res, next) => {
+      // Skip CSRF for registration
+      next();
+    });
+    this.express.use('/api/v1/auth/refresh', (req, res, next) => {
+      // Skip CSRF for token refresh
+      next();
+    });
+    this.express.use('/api/csrf-token', (req, res, next) => {
+      // Skip CSRF for token endpoint
+      next();
+    });
+    // Apply CSRF protection to all other API routes
     this.express.use('/api', csrfProtection);
     
     // Route to provide CSRF token to frontend

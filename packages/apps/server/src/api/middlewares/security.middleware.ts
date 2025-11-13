@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { rateLimit } from "express-rate-limit";
 import helmet from "helmet";
+import csrf from "csurf";
 import { config } from "../../config";
 
 /**
@@ -118,32 +119,6 @@ export function securityMiddleware(req: Request, res: Response, next: NextFuncti
     res.removeHeader("X-Powered-By");
     res.removeHeader("Server");
 
-    // CSRF Protection via SameSite cookies (already implemented in auth routes)
-    // Additional CSRF header check for API requests
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
-      const origin = req.get('Origin');
-      const referer = req.get('Referer');
-      const allowedOrigins = config.security.corsOrigins;
-
-      // Enhanced CSRF protection by checking origin/referer
-      if (origin && !allowedOrigins.includes(origin)) {
-        console.warn('CSRF Warning: Invalid origin', {
-          origin,
-          method: req.method,
-          path: req.path,
-          userAgent: req.get('User-Agent'),
-          ip: req.ip
-        });
-
-        // In production, you might want to reject the request
-        if (config.nodeEnv === 'production') {
-          return res.status(403).json({
-            error: 'Forbidden: Invalid origin'
-          });
-        }
-      }
-    }
-
     next();
   });
 }
@@ -173,4 +148,15 @@ export const generalRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+});
+
+/**
+ * CSRF Protection Middleware
+ */
+export const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  }
 });
