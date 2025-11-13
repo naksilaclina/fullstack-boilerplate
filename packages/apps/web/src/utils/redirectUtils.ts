@@ -6,7 +6,7 @@ import { UserRole } from "@/lib";
 export function getRedirectPathForRole(role: UserRole): string {
   switch (role) {
     case UserRole.ADMIN:
-      return "/dashboard";
+      return "/admin";
     case UserRole.USER:
       return "/user";
     default:

@@ -1,5 +1,5 @@
 import { UserRole, hasRole, hasAnyRole } from "@/lib";
-import { User } from "@/store/authSlice";
+import type { User } from "@/store/types";
 import { getAccessDeniedRedirectPathForRole, getPostLoginRedirectPath, getRedirectPathForRole } from "@/utils";
 
 // Authorization service to handle role-based access control

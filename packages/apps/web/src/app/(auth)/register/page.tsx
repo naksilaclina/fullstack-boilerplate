@@ -44,7 +44,7 @@ export default function RegisterPage() {
         description: "Account created successfully! Welcome to our platform.",
       });
       
-      router.push("/dashboard"); // Redirect to dashboard or home page
+      router.push("/admin"); // Redirect to admin dashboard or home page
     } catch (error: any) {
       toastService.error({
         message: "Registration Failed",

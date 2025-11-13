@@ -59,7 +59,7 @@ export default function DashboardPage() {
                     <button className="w-full text-left p-2 hover:bg-gray-100 rounded">
                       Account Settings
                     </button>
-                    <Link href="/dashboard/sessions" passHref>
+                    <Link href="/admin/sessions" passHref>
                       <Button variant="outline" className="w-full">
                         Manage Sessions
                       </Button>

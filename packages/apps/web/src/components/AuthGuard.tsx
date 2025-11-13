@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/auth";
 import { toastService } from "@/services/ui";
 import { authorizationService } from "@/services/auth";
 import { UserRole } from "@/lib";
-import type { User } from "@/store/authSlice";
+import type { User } from "@/store/types";
 import { useAppDispatch } from "@/store";
 import { checkAuthStatus, refreshAuthStatus } from "@/store/authSlice";
 import { authManager } from "@/utils";

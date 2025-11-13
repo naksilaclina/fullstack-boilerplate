@@ -34,7 +34,7 @@ export default function Hero() {
   // Determine where to redirect authenticated users
   const getUserDashboardLink = () => {
     if (!isAuthenticated) return "/";
-    if (user?.role === UserRole.ADMIN) return "/dashboard";
+    if (user?.role === UserRole.ADMIN) return "/admin";
     if (user?.role === UserRole.USER) return "/user";
     return "/";
   };

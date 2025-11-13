@@ -61,8 +61,8 @@ export default function Header() {
 
   const adminNavItems = [
     { name: "Home", link: "/" },
-    { name: "Dashboard", link: "/dashboard" },
-    { name: "Users", link: "/dashboard/users" },
+    { name: "Dashboard", link: "/admin" },
+    { name: "Users", link: "/admin/users" },
   ];
 
   // Determine which nav items to show based on current path and user role
@@ -77,7 +77,7 @@ export default function Header() {
       return userNavItems;
     }
     
-    if (pathname?.startsWith("/dashboard") && isAuthenticated && user?.role === UserRole.ADMIN) {
+    if (pathname?.startsWith("/admin") && isAuthenticated && user?.role === UserRole.ADMIN) {
       return adminNavItems;
     }
     
@@ -90,7 +90,7 @@ export default function Header() {
   // Determine where to redirect when user clicks their name
   const getUserDashboardLink = () => {
     if (!isAuthenticated) return "/";
-    if (user?.role === UserRole.ADMIN) return "/dashboard";
+    if (user?.role === UserRole.ADMIN) return "/admin";
     if (user?.role === UserRole.USER) return "/user";
     return "/";
   };
