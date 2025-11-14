@@ -1,6 +1,6 @@
 import cors from "cors";
 
-import { config } from "../../config";
+import { config } from "../../../config";
 
 // Get CORS origins from centralized config
 const corsOrigins = config.security.corsOrigins;

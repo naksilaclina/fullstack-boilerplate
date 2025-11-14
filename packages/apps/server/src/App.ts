@@ -3,17 +3,13 @@ import { type Server as HttpServer } from "http";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import csrf from "csurf";
 import {
   type Mongoose,
   connect as connectToMongodb,
 } from "@naksilaclina/mongodb";
 import { port, mongodbUri, config } from "./config";
 import { api } from "./api";
-import { securityMiddleware, generalRateLimiter, csrfProtection } from "./api/middlewares";
-import { monitoringMiddleware } from "./api/middlewares/monitoring.middleware";
-import { sessionTrackingMiddleware } from "./api/middlewares/session.middleware";
-import { errorHandler, notFoundHandler } from "./api/middlewares/error.middleware";
+import { securityMiddleware, generalRateLimiter, csrfProtection, monitoringMiddleware, sessionTrackingMiddleware, errorHandler, notFoundHandler } from "./api/middlewares";
 
 export default class App {
   public express: ExpressApp;

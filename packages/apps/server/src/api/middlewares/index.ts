@@ -1,8 +1,14 @@
-export { default as corsMiddleware } from "./corsMiddleware";
-export { default as handleErrorMiddleware } from "./handleErrorMiddleware";
-export { default as jsonMiddleware } from "./jsonMiddleware";
-export { default as publicImagesMiddleware } from "./publicImagesMiddleware";
-export { authenticate } from "./auth.middleware";
-export { validateRefreshToken } from "./refreshToken.middleware";
-export { validateSession } from "./sessionValidation.middleware";
-export { securityMiddleware, authRateLimiter, generalRateLimiter, csrfProtection } from "./security.middleware";
+// Authentication middlewares
+export * from "./auth";
+
+// Security middlewares
+export * from "./security";
+
+// Error handling middlewares
+export * from "./error";
+
+// Utility middlewares
+export * from "./utils";
+
+// Monitoring middlewares
+export * from "./monitoring";

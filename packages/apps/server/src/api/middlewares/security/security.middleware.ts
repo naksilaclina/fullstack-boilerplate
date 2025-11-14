@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { rateLimit } from "express-rate-limit";
 import helmet from "helmet";
 import csrf from "csurf";
-import { config } from "../../config";
+import { config } from "../../../config";
 
 /**
  * Advanced OWASP Security Headers Configuration

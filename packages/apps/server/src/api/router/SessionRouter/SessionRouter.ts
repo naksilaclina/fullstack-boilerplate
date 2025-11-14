@@ -1,11 +1,8 @@
 import { Router, Request, Response } from "express";
-import { body, validationResult } from "express-validator";
-import { authenticate } from "~api/middlewares/auth.middleware";
+import { authenticate } from "~api/middlewares/auth";
 import { 
   invalidateAllUserSessions, 
-  getUserActiveSessions,
-  cleanupExpiredSessions,
-  getGeoLocation
+  getUserActiveSessions
 } from "~api/services/auth";
 import { SessionModel } from "@naksilaclina/mongodb";
 import { isDevelopment } from "../../../config";

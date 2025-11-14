@@ -12,7 +12,7 @@ interface MonitoringOptions {
 /**
  * Safe request monitoring middleware
  */
-import { isDevelopment } from "../../config";
+import { isDevelopment } from "../../../config";
 
 export function monitoringMiddleware(options: MonitoringOptions = {}) {
   const {

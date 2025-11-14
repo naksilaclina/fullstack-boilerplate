@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { isProduction } from "../../config";
+import { isProduction } from "../../../config";
 
 /**
  * Development-friendly error handling middleware
