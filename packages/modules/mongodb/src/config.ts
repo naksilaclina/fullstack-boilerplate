@@ -1,5 +1,5 @@
 // Import from monorepo centralized configuration
-const { mongoConfig, isDevelopment, isProduction, isStaging, isTest } = require('../../../../../config');
+const { mongoConfig, isDevelopment, isProduction, isStaging, isTest } = require('../../../../config');
 
 // Re-export MongoDB-specific configuration
 export const config = mongoConfig;

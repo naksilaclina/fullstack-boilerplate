@@ -3,7 +3,7 @@ import path from 'path';
 import { monorepoConfigSchema, validationOptions } from './schema';
 
 // Load environment variables from root .env file
-dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 /**
  * Monorepo Configuration Interface

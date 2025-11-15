@@ -38,7 +38,7 @@ export default function Hero() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] px-4 py-8 text-center">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-8 text-center">
       <div className="max-w-3xl w-full">
         <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
           Welcome to MyApp
