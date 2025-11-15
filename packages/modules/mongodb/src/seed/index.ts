@@ -1,18 +1,24 @@
 import { hash } from "bcrypt";
 import mongoose from "mongoose";
 import { UserModel } from "../entities";
-import { config, isDevelopment } from "../config";
 
-// Use centralized configuration
-const mongodbUri = config.database.uri;
-const mongodbDevUri = config.database.devUri;
+// Simple configuration without validation for seeding
+const isDevelopment = process.env.NODE_ENV === 'development';
+const mongodbUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/naksilaclina';
+const mongodbDevUri = process.env.MONGODB_DEV_URI || 'mongodb://localhost:27017/naksilaclina-dev';
 
-console.log("NODE_ENV:", config.nodeEnv);
+console.log("NODE_ENV:", process.env.NODE_ENV || 'development');
 
 const SALT_ROUNDS = 10;
 
-async function seedUsers(maxRetries = 5, retryDelay = 2000) {
+interface SeedOptions {
+  force?: boolean;
+  clear?: boolean;
+}
+
+async function seedUsers(options: SeedOptions = {}, maxRetries = 5, retryDelay = 2000) {
   let retries = 0;
+  const { force = false, clear = false } = options;
   
   while (retries < maxRetries) {
     try {
@@ -26,25 +32,16 @@ async function seedUsers(maxRetries = 5, retryDelay = 2000) {
         try {
           // Use the development MongoDB URI from environment variables
           uri = mongodbDevUri;
-          if (!uri) {
-            throw new Error("Development URI not available");
-          }
           console.log("Using MongoDB Memory Server for seeding (from env):", uri);
           connection = await mongoose.connect(uri);
         } catch (error) {
           console.log("Failed to connect to MongoDB Memory Server, using provided URI:", mongodbUri);
           uri = mongodbUri;
-          if (!uri) {
-            throw new Error("MongoDB URI is required");
-          }
           connection = await mongoose.connect(uri);
         }
       } else {
         // In production, use the provided URI
         uri = mongodbUri;
-        if (!uri) {
-          throw new Error("MongoDB URI is required");
-        }
         connection = await mongoose.connect(uri);
       }
       
@@ -52,16 +49,16 @@ async function seedUsers(maxRetries = 5, retryDelay = 2000) {
 
       // Check if users already exist
       const userCount = await UserModel.countDocuments();
-      if (userCount > 0 && !config.features.forceSeed) {
+      if (userCount > 0 && !force && !clear) {
         console.log(`Database already contains ${userCount} users. Skipping seeding.`);
-        console.log("To force seeding, set FORCE_SEED=true environment variable.");
+        console.log("To force seeding, use --force flag.");
         await mongoose.disconnect();
         return;
       }
 
-      // Clear existing users only if forced
-      if (config.features.forceSeed) {
-        console.log("Clearing existing users (forced)...");
+      // Clear existing users if requested
+      if (clear || force) {
+        console.log("Clearing existing users...");
         await UserModel.deleteMany({});
         console.log("Cleared existing users");
       }
@@ -120,9 +117,27 @@ async function seedUsers(maxRetries = 5, retryDelay = 2000) {
   }
 }
 
+// Parse command line arguments
+function parseArgs(): SeedOptions {
+  const args = process.argv.slice(2);
+  const options: SeedOptions = {};
+  
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--force' || arg === '-f') {
+      options.force = true;
+    } else if (arg === '--clear' || arg === '-c') {
+      options.clear = true;
+    }
+  }
+  
+  return options;
+}
+
 // Run the seed function
 if (require.main === module) {
-  seedUsers();
+  const options = parseArgs();
+  seedUsers(options);
 }
 
 export default seedUsers;

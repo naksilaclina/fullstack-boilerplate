@@ -42,8 +42,8 @@ export default function RegisterPage() {
   }, []);
 
   const handleQuickLogin = async (userEmail: string, userPassword: string) => {
-    // Redirect to login page with pre-filled credentials
-    router.push(`/login?email=${encodeURIComponent(userEmail)}&password=${encodeURIComponent(userPassword)}`);
+    // Redirect to login page without credentials in URL
+    router.push("/login");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

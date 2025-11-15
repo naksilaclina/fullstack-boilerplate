@@ -83,18 +83,4 @@ function startFrontend() {
     webProcess.kill();
     process.exit(0);
   });
-
-  process.on('SIGINT', () => {
-    apiProcess.kill();
-    webProcess.kill();
-    process.exit(0);
-  });
 }
-
-// Handle case where API fails to start
-apiProcess.on('close', (code) => {
-  if (code !== 0 && !apiReady) {
-    console.error('API process exited unexpectedly with code:', code);
-    process.exit(1);
-  }
-});

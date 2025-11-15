@@ -53,19 +53,7 @@ export default function LoginPage() {
   useEffect(() => {
     // Check if we're in development mode
     setIsDevelopment(process.env.NODE_ENV === "development");
-    
-    // Check for pre-filled credentials from URL parameters (only on initial load)
-    const emailParam = searchParams.get('email');
-    const passwordParam = searchParams.get('password');
-    
-    // Set credentials from URL parameters if present
-    if (emailParam) {
-      setEmail(decodeURIComponent(emailParam));
-    }
-    if (passwordParam) {
-      setPassword(decodeURIComponent(passwordParam));
-    }
-  }, [searchParams]);
+  }, []);
 
   const handleQuickLogin = async (userEmail: string, userPassword: string) => {
     // Call handleSubmit directly with the credentials to avoid state update race conditions

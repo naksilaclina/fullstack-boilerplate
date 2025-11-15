@@ -58,6 +58,17 @@ export const flow: RouteFlowType<
     };
   }
 
+  // Check if user already exists
+  const existingUser = await UserModel.findOne({ email });
+  if (existingUser) {
+    return {
+      status: 409,
+      body: {
+        error: "User with this email already exists"
+      } as any
+    };
+  }
+
   // Hash the password
   const hashedPassword = await hash(password, SALT_ROUNDS);
 
