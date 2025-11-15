@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from "@/hooks/auth";
 import { register as registerService } from "@/services/auth";
 import { toastService } from "@/services/ui";
+import { authorizationService } from "@/services/auth";
 
 export default function RegisterPage() {
   const [firstName, setFirstName] = useState("");
@@ -19,7 +20,7 @@ export default function RegisterPage() {
   const [isDevelopment, setIsDevelopment] = useState(false);
   const router = useRouter();
   const { login, isAuthenticated, user, isReady } = useAuth();
-  
+
   // Track if we're in the process of redirecting
   const isRedirecting = useRef(false);
 
@@ -32,7 +33,10 @@ export default function RegisterPage() {
     if (isReady && isAuthenticated && user && !isRedirecting.current) {
       console.log('🔄 Register page redirecting authenticated user to dashboard');
       isRedirecting.current = true;
-      router.push("/admin"); // Redirect to admin dashboard or home page
+
+      // Use our authorization service to determine redirect path based on user role
+      const redirectPath = authorizationService.getPostLoginRedirectPath(user);
+      router.push(redirectPath);
     }
   }, [isReady, isAuthenticated, user, router]);
 
@@ -41,25 +45,22 @@ export default function RegisterPage() {
     setIsDevelopment(process.env.NODE_ENV === "development");
   }, []);
 
-  const handleQuickLogin = async (userEmail: string, userPassword: string) => {
-    // Redirect to login page without credentials in URL
-    router.push("/login");
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     setIsLoading(true);
-    
+
     try {
       const response = await registerService({ firstName, lastName, email, password });
       login(response.user); // Pass only the user object, not the accessToken
-      
+
       toastService.success({
         message: "Registration Successful",
         description: "Account created successfully! Welcome to our platform.",
       });
-      
+
       // Note: We don't redirect here anymore. The useEffect above will handle redirection
       // when the auth state is properly updated
     } catch (error: any) {
@@ -130,8 +131,8 @@ export default function RegisterPage() {
               <Button className="w-full" type="submit" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Create account"}
               </Button>
-              
-              {/* Quick login buttons for development mode */}
+
+              {/* Quick test register for development mode */}
               {isDevelopment && (
                 <div className="w-full space-y-2">
                   <div className="relative">
@@ -140,32 +141,49 @@ export default function RegisterPage() {
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-background px-2 text-gray-500">
-                        Development Quick Login
+                        Development Quick Register
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       className="flex-1"
-                      onClick={() => handleQuickLogin("naksilaclina@gmail.com", "Test123!@#")}
+                      onClick={() => {
+                        // Generate unique test data
+                        const timestamp = Date.now();
+                        const randomNum = Math.floor(Math.random() * 1000);
+                        setFirstName(`User${randomNum}`);
+                        setLastName(`Test${timestamp.toString().slice(-4)}`);
+                        setEmail(`user${timestamp}${randomNum}@example.com`);
+                        setPassword("Test123!@#");
+                      }}
                       disabled={isLoading}
                     >
-                      Test User
+                      New Test User
                     </Button>
-                    <Button 
-                      variant="outline" 
+
+                    <Button
+                      type="button"
+                      variant="outline"
                       className="flex-1"
-                      onClick={() => handleQuickLogin("admin@example.com", "Admin123!@#")}
+                      onClick={() => {
+                        // Fill with existing test user data from seed (will cause duplicate error)
+                        setFirstName("Test");
+                        setLastName("User");
+                        setEmail("test@example.com"); // Known existing email from seed
+                        setPassword("Test123!@#");
+                      }}
                       disabled={isLoading}
                     >
-                      Admin User
+                      Existing User
                     </Button>
                   </div>
                 </div>
               )}
-              
+
               <div className="text-center text-sm">
                 Already have an account?{" "}
                 <button

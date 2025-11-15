@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { UserRole } from "@/lib";
 
 export default function UserPanel() {
-  const { user } = useAuth();
+  const { user, isReady } = useAuth();
 
   return (
     <AuthGuard allowedRoles={[UserRole.USER, UserRole.ADMIN]}>
@@ -18,7 +18,7 @@ export default function UserPanel() {
             User Panel
           </h1>
           <p className="text-lg text-muted-foreground">
-            Welcome back, {user?.firstName}!
+            {isReady && user ? `Welcome back, ${user.firstName}!` : "Loading..."}
           </p>
         </div>
         
@@ -30,8 +30,14 @@ export default function UserPanel() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p><span className="font-medium">Name:</span> {user?.firstName} {user?.lastName}</p>
-                <p><span className="font-medium">Role:</span> {user?.role}</p>
+                {isReady && user ? (
+                  <>
+                    <p><span className="font-medium">Name:</span> {user.firstName} {user.lastName}</p>
+                    <p><span className="font-medium">Role:</span> {user.role}</p>
+                  </>
+                ) : (
+                  <p>Loading profile...</p>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -72,11 +72,12 @@ export default function Header() {
       return guestNavItems;
     }
     
-    // Show role-specific navigation when on role-specific pages
-    if (pathname?.startsWith("/user") && isAuthenticated && user?.role === UserRole.USER) {
+    // Show user navigation when on user pages (for both user and admin roles)
+    if (pathname?.startsWith("/user") && isAuthenticated) {
       return userNavItems;
     }
     
+    // Show admin navigation when on admin pages (only for admin role)
     if (pathname?.startsWith("/admin") && isAuthenticated && user?.role === UserRole.ADMIN) {
       return adminNavItems;
     }

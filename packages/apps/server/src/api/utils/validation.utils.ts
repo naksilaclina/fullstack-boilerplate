@@ -16,7 +16,7 @@ export function handleValidationErrors(req: Request, res: Response, next: NextFu
       ip: req.ip,
       userAgent: req.get("User-Agent"),
     });
-    
+
     return res.status(400).json({
       error: "Validation failed",
       details: errors.array().map((error: ValidationError) => ({
@@ -25,7 +25,7 @@ export function handleValidationErrors(req: Request, res: Response, next: NextFu
       })),
     });
   }
-  
+
   next();
 }
 
@@ -59,7 +59,7 @@ export const validatePassword = (): ValidationChain => {
       .isLength({ min: 6, max: 128 })
       .withMessage("Password must be between 6 and 128 characters");
   }
-  
+
   // In production mode, require strong password
   return body("password")
     .isString()
@@ -79,6 +79,6 @@ export const validateName = (field: string): ValidationChain => {
     .trim()
     .isLength({ min: 1, max: 50 })
     .withMessage(`${field.charAt(0).toUpperCase() + field.slice(1)} must be between 1 and 50 characters`)
-    .matches(/^[a-zA-ZğüşıöçĞÜŞİÖÇ\s\-']+$/)
+    .matches(/^[a-zA-ZğüşıöçĞÜŞİÖÇ0-9\s\-']+$/)
     .withMessage(`${field.charAt(0).toUpperCase() + field.slice(1)} contains invalid characters`);
 };

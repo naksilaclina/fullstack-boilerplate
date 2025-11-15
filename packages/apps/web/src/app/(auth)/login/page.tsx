@@ -204,7 +204,7 @@ export default function LoginPage() {
                     <Button
                       variant="outline"
                       className="flex-1"
-                      onClick={() => handleQuickLogin("naksilaclina@gmail.com", "Test123!@#")}
+                      onClick={() => handleQuickLogin("test@example.com", "Test123!@#")}
                       disabled={isLoading}
                     >
                       Test User

@@ -68,9 +68,9 @@ async function seedUsers(options: SeedOptions = {}, maxRetries = 5, retryDelay =
       // Updated to use a strong password that meets our requirements
       const testUserPassword = await hash("Test123!@#", SALT_ROUNDS);
       const testUser = new UserModel({
-        firstName: "Anıl",
-        lastName: "Çalışkan",
-        email: "naksilaclina@gmail.com",
+        firstName: "Test",
+        lastName: "User",
+        email: "test@example.com",
         password: testUserPassword,
         role: "user",
         isActive: true,
