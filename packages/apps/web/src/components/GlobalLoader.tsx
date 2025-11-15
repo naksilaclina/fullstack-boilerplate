@@ -9,7 +9,7 @@ interface GlobalLoaderProps {
 
 const GlobalLoader: React.FC<GlobalLoaderProps> = ({ children }) => {
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const { isLoading: isAuthLoading, initializing } = useAuth();
+  const { initializing } = useAuth();
 
   useEffect(() => {
     // Check if we're in a browser environment

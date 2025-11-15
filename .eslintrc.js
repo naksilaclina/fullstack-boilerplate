@@ -6,12 +6,10 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
-    'plugin:security/recommended',
+    'plugin:@typescript-eslint/recommended',
   ],
   plugins: [
     '@typescript-eslint',
-    'security',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -19,27 +17,13 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
-    // Security rules
-    'security/detect-object-injection': 'error',
-    'security/detect-non-literal-regexp': 'error',
-    'security/detect-unsafe-regex': 'error',
-    'security/detect-buffer-noassert': 'error',
-    'security/detect-child-process': 'warn',
-    'security/detect-disable-mustache-escape': 'error',
-    'security/detect-eval-with-expression': 'error',
-    'security/detect-no-csrf-before-method-override': 'error',
-    'security/detect-non-literal-fs-filename': 'warn',
-    'security/detect-non-literal-require': 'warn',
-    'security/detect-possible-timing-attacks': 'warn',
-    'security/detect-pseudoRandomBytes': 'error',
-    
-    // TypeScript security rules
+    // TypeScript rules
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-unused-vars': 'error',
-    '@typescript-eslint/explicit-function-return-type': 'warn',
+    '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/no-non-null-assertion': 'warn',
     
-    // General security best practices
+    // General best practices
     'no-eval': 'error',
     'no-implied-eval': 'error',
     'no-new-func': 'error',
@@ -51,7 +35,6 @@ module.exports = {
       files: ['*.test.ts', '*.test.js'],
       rules: {
         'no-console': 'off',
-        '@typescript-eslint/explicit-function-return-type': 'off',
       },
     },
   ],

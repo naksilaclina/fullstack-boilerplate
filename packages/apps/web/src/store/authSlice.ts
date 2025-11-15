@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { getProfile, refreshAuth } from '@/services/auth';
-import type { User } from './types.ts';
-import { getPostLogoutRedirectPath } from '@/utils/redirectUtils';
+import type { User } from './types';
 
 interface AuthState {
   user: User | null;
@@ -26,7 +25,7 @@ export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
   async (_, { rejectWithValue }) => {
     console.log('🔄 checkAuthStatus: Starting auth check...');
-    
+
     try {
       console.log('🔄 checkAuthStatus: Calling getProfile...');
       const profile = await getProfile();
@@ -48,12 +47,12 @@ export const refreshAuthStatus = createAsyncThunk(
   'auth/refreshStatus',
   async (_, { rejectWithValue }) => {
     console.log('🔄 refreshAuthStatus: Starting background auth refresh...');
-    
+
     try {
       // First try to refresh the tokens
       const refreshResult = await refreshAuth();
       console.log('🔄 refreshAuthStatus: Refresh result', refreshResult);
-      
+
       if (refreshResult) {
         // If refresh was successful, get the profile
         console.log('🔄 refreshAuthStatus: Getting profile after successful refresh...');
@@ -95,7 +94,7 @@ const authSlice = createSlice({
       state.error = null;
       console.log('✅ setUser: User authenticated', action.payload.user);
     },
-    
+
     // Logout action to clear user state
     logout: (state) => {
       state.user = null;
