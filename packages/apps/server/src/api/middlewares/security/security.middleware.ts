@@ -128,7 +128,10 @@ export function securityMiddleware(req: Request, res: Response, next: NextFuncti
  */
 export const authRateLimiter = rateLimit({
   windowMs: config.security.rateLimiting.windowMs,
-  max: config.security.rateLimiting.authMaxRequests,
+  // In development, disable rate limiting by setting a very high limit
+  max: config.nodeEnv === 'development' 
+    ? 999999 // Effectively unlimited in dev
+    : config.security.rateLimiting.authMaxRequests,
   message: {
     error: "Too many login attempts, please try again later."
   },
@@ -142,7 +145,10 @@ export const authRateLimiter = rateLimit({
  */
 export const generalRateLimiter = rateLimit({
   windowMs: config.security.rateLimiting.windowMs,
-  max: config.security.rateLimiting.maxRequests,
+  // In development, disable rate limiting by setting a very high limit
+  max: config.nodeEnv === 'development'
+    ? 999999 // Effectively unlimited in dev
+    : config.security.rateLimiting.maxRequests,
   message: {
     error: "Too many requests, please try again later."
   },
