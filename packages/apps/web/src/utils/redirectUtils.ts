@@ -20,8 +20,22 @@ export function getPostLoginRedirectPath(role: UserRole): string {
 }
 
 // Get redirect path after logout
-export function getPostLogoutRedirectPath(): string {
-  return "/login";
+// Updated to accept current path to determine appropriate redirect
+export function getPostLogoutRedirectPath(currentPath: string = "/"): string {
+  // Define protected routes that require authentication
+  const protectedRoutes = [
+    "/admin",
+    "/user"
+  ];
+  
+  // Check if current path starts with any protected route
+  const isOnProtectedRoute = protectedRoutes.some(route => 
+    currentPath.startsWith(route)
+  );
+  
+  // If on a protected route, redirect to login
+  // Otherwise, stay on the current page
+  return isOnProtectedRoute ? "/login" : currentPath;
 }
 
 // Get redirect path when access is denied

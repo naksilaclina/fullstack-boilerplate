@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { getProfile, refreshAuth } from '@/services/auth';
 import type { User } from './types.ts';
+import { getPostLogoutRedirectPath } from '@/utils/redirectUtils';
 
 interface AuthState {
   user: User | null;
@@ -42,54 +43,59 @@ export const checkAuthStatus = createAsyncThunk(
   }
 );
 
-// Async thunk to refresh auth tokens
+// Async thunk to refresh auth status (silent background check)
 export const refreshAuthStatus = createAsyncThunk(
   'auth/refreshStatus',
   async (_, { rejectWithValue }) => {
+    console.log('🔄 refreshAuthStatus: Starting background auth refresh...');
+    
     try {
-      console.log('🔄 refreshAuthStatus: Calling refreshAuth...');
-      const refreshed = await refreshAuth();
-      console.log('✅ refreshAuthStatus: refreshAuth result', refreshed);
-      if (refreshed) {
-        // After successful refresh, get the profile
-        console.log('🔄 refreshAuthStatus: Getting profile after refresh...');
+      // First try to refresh the tokens
+      const refreshResult = await refreshAuth();
+      console.log('🔄 refreshAuthStatus: Refresh result', refreshResult);
+      
+      if (refreshResult) {
+        // If refresh was successful, get the profile
+        console.log('🔄 refreshAuthStatus: Getting profile after successful refresh...');
         const profile = await getProfile();
         console.log('✅ refreshAuthStatus: getProfile after refresh successful', profile);
         return profile;
       } else {
-        console.log('❌ refreshAuthStatus: refreshAuth returned false');
-        return rejectWithValue('Failed to refresh authentication');
+        console.log('❌ refreshAuthStatus: Token refresh failed');
+        return rejectWithValue('UNAUTHENTICATED');
       }
     } catch (error: any) {
-      console.log('❌ refreshAuthStatus: refreshAuth failed', error);
-      return rejectWithValue(error.message || 'Failed to refresh authentication');
+      console.log('❌ refreshAuthStatus: Refresh failed', error);
+      // Return a more specific error for unauthenticated users
+      if (error.message === 'UNAUTHENTICATED') {
+        return rejectWithValue('UNAUTHENTICATED');
+      }
+      return rejectWithValue(error.message || 'Failed to refresh auth status');
     }
   }
 );
 
-export const authSlice = createSlice({
+const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    // Set user action (used during login)
     setUser: (state, action: PayloadAction<{ user: User }>) => {
-      state.user = action.payload.user;
+      state.user = {
+        id: action.payload.user.id,
+        firstName: action.payload.user.firstName,
+        lastName: action.payload.user.lastName,
+        email: action.payload.user.email,
+        role: action.payload.user.role
+      };
       state.isAuthenticated = true;
       state.loading = false;
       state.initializing = false;        // Auth tamamlandı
       state.backgroundValidating = false; // Background validation bitti
       state.error = null;
-      console.log('✅ setUser: User set in state', action.payload.user);
+      console.log('✅ setUser: User authenticated', action.payload.user);
     },
-    clearUser: (state) => {
-      state.user = null;
-      state.isAuthenticated = false;
-      state.loading = false;
-      state.initializing = false;        // Auth tamamlandı
-      state.backgroundValidating = false; // Background validation bitti
-      state.error = null;
-      console.log('✅ clearUser: User cleared from state');
-    },
-
+    
     // Logout action to clear user state
     logout: (state) => {
       state.user = null;
@@ -127,24 +133,32 @@ export const authSlice = createSlice({
         state.initializing = false;        // Auth tamamlandı
         state.backgroundValidating = false; // Background validation bitti
         state.error = null;
-        console.log('✅ checkAuthStatus: Fulfilled', action.payload);
+        console.log('✅ checkAuthStatus: fulfilled', action.payload);
       })
       .addCase(checkAuthStatus.rejected, (state, action) => {
-        state.user = null;
-        state.isAuthenticated = false;
-        state.loading = false;
-        state.initializing = false;        // Auth tamamlandı (başarısız)
-        state.backgroundValidating = false; // Background validation bitti
-        // Don't set error for unauthenticated users as it's expected
-        if (action.payload !== 'UNAUTHENTICATED') {
-          state.error = action.payload as string || 'Failed to authenticate';
+        // For unauthenticated users, clear state but don't show error
+        if (action.payload === 'UNAUTHENTICATED') {
+          state.user = null;
+          state.isAuthenticated = false;
+          state.loading = false;
+          state.initializing = false;        // Auth tamamlandı
+          state.backgroundValidating = false; // Background validation bitti
+          state.error = null;
+          console.log('ℹ️ checkAuthStatus: User is unauthenticated (expected)');
+        } else {
+          // For other errors, show error state
+          state.user = null;
+          state.isAuthenticated = false;
+          state.loading = false;
+          state.initializing = false;        // Auth tamamlandı
+          state.backgroundValidating = false; // Background validation bitti
+          state.error = action.payload as string;
+          console.log('❌ checkAuthStatus: rejected', action.payload);
         }
-        console.log('❌ checkAuthStatus: Rejected', action.payload);
       })
-      
       // Refresh auth status
       .addCase(refreshAuthStatus.pending, (state) => {
-        // Always treat token refresh as background operation
+        // Don't show loading spinner for background refresh
         state.backgroundValidating = true;
         state.error = null;
         console.log('🔄 refreshAuthStatus: Pending');
@@ -158,29 +172,29 @@ export const authSlice = createSlice({
           role: action.payload.role
         };
         state.isAuthenticated = true;
-        state.loading = false;
-        state.initializing = false;        // Auth tamamlandı
-        state.backgroundValidating = false; // Background validation bitti
+        state.backgroundValidating = false;
         state.error = null;
-        console.log('✅ refreshAuthStatus: Fulfilled', action.payload);
+        console.log('✅ refreshAuthStatus: fulfilled', action.payload);
       })
       .addCase(refreshAuthStatus.rejected, (state, action) => {
-        state.user = null;
-        state.isAuthenticated = false;
-        state.loading = false;
-        state.initializing = false;        // Auth tamamlandı (başarısız)
-        state.backgroundValidating = false; // Background validation bitti
-        // Don't set error for token refresh failures as it's expected when tokens are expired
-        if (action.payload !== 'Token refresh failed' && action.payload !== 'Failed to refresh authentication') {
-          state.error = action.payload as string || 'Failed to refresh authentication';
+        // For unauthenticated users during refresh, clear state but don't show error
+        if (action.payload === 'UNAUTHENTICATED') {
+          state.user = null;
+          state.isAuthenticated = false;
+          state.backgroundValidating = false;
+          state.error = null;
+          console.log('ℹ️ refreshAuthStatus: User is unauthenticated (expected)');
+        } else {
+          // For other errors, show error state
+          state.user = null;
+          state.isAuthenticated = false;
+          state.backgroundValidating = false;
+          state.error = action.payload as string;
+          console.log('❌ refreshAuthStatus: rejected', action.payload);
         }
-        console.log('❌ refreshAuthStatus: Rejected', action.payload);
       });
   },
 });
 
-export const { setUser, clearUser, logout } = authSlice.actions;
-
-export type { AuthState };
-
+export const { setUser, logout } = authSlice.actions;
 export default authSlice.reducer;

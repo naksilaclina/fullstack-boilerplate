@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/auth";
 import { logout as logoutService } from "@/services/auth";
 import { toastService } from "@/services/ui";
+import { getPostLogoutRedirectPath } from "@/utils/redirectUtils";
 
 interface LogoutButtonProps {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
@@ -33,10 +34,15 @@ export default function LogoutButton({
         description: "You have been successfully logged out."
       });
       
-      // Redirect to login page
-      router.push("/login");
-      // Refresh the page to ensure clean state
-      router.refresh();
+      // Get appropriate redirect path based on current location
+      const redirectPath = getPostLogoutRedirectPath(window.location.pathname);
+      
+      // Only redirect if path is different from current
+      if (redirectPath !== window.location.pathname) {
+        router.push(redirectPath);
+        // Refresh the page to ensure clean state
+        router.refresh();
+      }
     } catch (error: any) {
       toastService.error({
         message: "Logout Failed",
