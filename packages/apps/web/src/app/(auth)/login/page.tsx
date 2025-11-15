@@ -18,20 +18,37 @@ export default function LoginPage() {
   const [isDevelopment, setIsDevelopment] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, isAuthenticated, user } = useAuth();
+  const { login, isAuthenticated, user, isReady } = useAuth();
   
   // Use a ref to prevent multiple simultaneous submissions
   const isSubmitting = useRef(false);
+  // Track if we're in the process of redirecting
+  const isRedirecting = useRef(false);
 
-  // Redirect authenticated users to their default page (only on initial load)
+  // Redirect authenticated users to their default page when auth state is ready
   useEffect(() => {
-    if (isAuthenticated && user && !isSubmitting.current) {
+    // Only redirect if:
+    // 1. Auth state is ready
+    // 2. User is authenticated
+    // 3. We're not already redirecting
+    // 4. We're not currently submitting (prevents race conditions)
+    if (isReady && isAuthenticated && user && !isSubmitting.current && !isRedirecting.current) {
       console.log('🔄 Login page redirecting authenticated user to dashboard');
+      isRedirecting.current = true;
+      
       // Use our authorization service to determine redirect path
       const redirectPath = authorizationService.getPostLoginRedirectPath(user);
-      router.push(redirectPath);
+      
+      // Check if there's a redirect URL in the search params
+      const redirectUrl = searchParams.get("redirect");
+      
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else {
+        router.push(redirectPath);
+      }
     }
-  }, [isAuthenticated, user, router]);
+  }, [isReady, isAuthenticated, user, router, searchParams]);
 
   useEffect(() => {
     // Check if we're in development mode
@@ -86,16 +103,8 @@ export default function LoginPage() {
       setEmail("");
       setPassword("");
       
-      // Use our authorization service to determine redirect path
-      const redirectPath = authorizationService.getPostLoginRedirectPath(response.user);
-      
-      // Check if there's a redirect URL in the search params
-      const redirectUrl = searchParams.get("redirect");
-      if (redirectUrl) {
-        router.push(redirectUrl);
-      } else {
-        router.push(redirectPath);
-      }
+      // Note: We don't redirect here anymore. The useEffect above will handle redirection
+      // when the auth state is properly updated
     } catch (error: any) {
       toastService.error({
         message: "Login Failed",
@@ -140,16 +149,8 @@ export default function LoginPage() {
       setEmail("");
       setPassword("");
       
-      // Use our authorization service to determine redirect path
-      const redirectPath = authorizationService.getPostLoginRedirectPath(response.user);
-      
-      // Check if there's a redirect URL in the search params
-      const redirectUrl = searchParams.get("redirect");
-      if (redirectUrl) {
-        router.push(redirectUrl);
-      } else {
-        router.push(redirectPath);
-      }
+      // Note: We don't redirect here anymore. The useEffect above will handle redirection
+      // when the auth state is properly updated
     } catch (error: any) {
       toastService.error({
         message: "Login Failed",

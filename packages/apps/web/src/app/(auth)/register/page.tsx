@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,23 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDevelopment, setIsDevelopment] = useState(false);
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated, user, isReady } = useAuth();
+  
+  // Track if we're in the process of redirecting
+  const isRedirecting = useRef(false);
+
+  // Redirect authenticated users to their default page when auth state is ready
+  useEffect(() => {
+    // Only redirect if:
+    // 1. Auth state is ready
+    // 2. User is authenticated
+    // 3. We're not already redirecting
+    if (isReady && isAuthenticated && user && !isRedirecting.current) {
+      console.log('🔄 Register page redirecting authenticated user to dashboard');
+      isRedirecting.current = true;
+      router.push("/admin"); // Redirect to admin dashboard or home page
+    }
+  }, [isReady, isAuthenticated, user, router]);
 
   useEffect(() => {
     // Check if we're in development mode
@@ -44,7 +60,8 @@ export default function RegisterPage() {
         description: "Account created successfully! Welcome to our platform.",
       });
       
-      router.push("/admin"); // Redirect to admin dashboard or home page
+      // Note: We don't redirect here anymore. The useEffect above will handle redirection
+      // when the auth state is properly updated
     } catch (error: any) {
       toastService.error({
         message: "Registration Failed",
