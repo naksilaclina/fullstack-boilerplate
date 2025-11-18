@@ -6,7 +6,6 @@ import { type RouteFlowType } from "~api/router/utils";
 import { type IGetUsersParams } from "./params";
 import {
   documentToRecord,
-  type IGetUsersDocument,
   type GetUsersActionResults,
 } from "./response";
 
@@ -47,7 +46,7 @@ export const flow: RouteFlowType<
       return res.length && res[0].count;
     });
 
-  const records = await createUsersQuery<IGetUsersDocument>()
+  const records = await createUsersQuery<any>()
     .skip(skip)
     .limit(limit)
     .exec();

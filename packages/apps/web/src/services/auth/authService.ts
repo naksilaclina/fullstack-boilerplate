@@ -10,6 +10,10 @@ interface RegisterData {
   lastName: string;
   email: string;
   password: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  bio?: string;
 }
 
 interface AuthResponse {
@@ -20,6 +24,10 @@ interface AuthResponse {
     lastName: string;
     email: string;
     role: string;
+    phone?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    bio?: string;
   };
 }
 

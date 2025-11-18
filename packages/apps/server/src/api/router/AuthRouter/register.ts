@@ -38,6 +38,42 @@ const devLog = (...args: any[]) => {
   }
 };
 
+// Additional validation for new fields
+const validatePhone = () => {
+  return body("phone")
+    .optional()
+    .isString()
+    .trim()
+    .matches(/^[\+]?[1-9][\d]{0,15}$/)
+    .withMessage("Please provide a valid phone number");
+};
+
+const validateDateOfBirth = () => {
+  return body("dateOfBirth")
+    .optional()
+    .isISO8601()
+    .withMessage("Please provide a valid date of birth")
+    .custom((value) => {
+      const date = new Date(value);
+      const today = new Date();
+      const age = today.getFullYear() - date.getFullYear();
+      if (age < 13) {
+        throw new Error("You must be at least 13 years old to register");
+      }
+      if (age > 120) {
+        throw new Error("Please provide a valid date of birth");
+      }
+      return true;
+    });
+};
+
+const validateGender = () => {
+  return body("gender")
+    .optional()
+    .isIn(["male", "female", "other", "prefer-not-to-say"])
+    .withMessage("Please select a valid gender option");
+};
+
 /**
  * POST /api/v1/auth/register
  * Register endpoint
@@ -50,6 +86,9 @@ router.post(
     validateName("lastName"),
     validateEmail(),
     validatePassword(),
+    validatePhone(),
+    validateDateOfBirth(),
+    validateGender(),
   ],
   handleValidationErrors,
   async (req: Request, res: Response) => {
@@ -63,7 +102,16 @@ router.post(
         });
       }
 
-      const { firstName, lastName, email, password } = req.body;
+      const { 
+        firstName, 
+        lastName, 
+        email, 
+        password,
+        phone,
+        dateOfBirth,
+        gender,
+        bio
+      } = req.body;
 
       // Check if user already exists
       const existingUser = await UserModel.findOne({ email });
@@ -76,13 +124,29 @@ router.post(
       // Hash the password
       const hashedPassword = await hash(password, SALT_ROUNDS);
 
-      // Create the user
+      // Create the user with additional profile information
       const user = new UserModel({
         firstName,
         lastName,
         email,
         password: hashedPassword,
         role: "user", // Default role
+        phone,
+        dateOfBirth,
+        gender,
+        bio,
+        emailVerified: false, // Email verification required
+        preferences: {
+          newsletter: false,
+          notifications: {
+            email: true,
+            push: true
+          },
+          theme: "auto",
+          language: "en"
+        },
+        timezone: "UTC",
+        locale: "en-US"
       });
 
       // Save the user
@@ -128,6 +192,10 @@ router.post(
           lastName: savedUser.lastName,
           email: savedUser.email,
           role: savedUser.role,
+          phone: savedUser.phone,
+          dateOfBirth: savedUser.dateOfBirth,
+          gender: savedUser.gender,
+          bio: savedUser.bio
         },
         accessToken,
       });

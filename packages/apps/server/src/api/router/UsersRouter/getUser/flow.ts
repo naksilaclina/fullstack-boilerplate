@@ -6,7 +6,6 @@ import { type RouteFlowType } from "~api/router/utils";
 import { type IGetUserParams } from "./params";
 import {
   documentToRecord,
-  type IGetUserDocument,
   type GetUserActionResults,
 } from "./response";
 
@@ -27,6 +26,6 @@ export const flow: RouteFlowType<
 
   return {
     status: StatusCodes.OK,
-    body: documentToRecord(user as IGetUserDocument),
+    body: documentToRecord(user),
   };
 };

@@ -36,13 +36,24 @@ router.get("/", authenticate, async (req: Request, res: Response) => {
       });
     }
 
-    // Return user data
+    // Return user data with new fields
     return res.status(200).json({
       id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
       role: user.role,
+      phone: user.phone,
+      dateOfBirth: user.dateOfBirth,
+      gender: user.gender,
+      bio: user.bio,
+      avatar: user.avatar,
+      address: user.address,
+      preferences: user.preferences,
+      timezone: user.timezone,
+      locale: user.locale,
+      emailVerified: user.emailVerified,
+      lastLoginAt: user.lastLoginAt
     });
   } catch (error) {
     if (isDevelopment) {

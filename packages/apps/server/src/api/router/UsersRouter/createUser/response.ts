@@ -1,10 +1,5 @@
 import { type IUserDocument } from "@naksilaclina/mongodb";
 
-export interface ICreateUserDocument extends IUserDocument {
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface ICreateUserResponse {
   _id: string;
   firstName: string;
@@ -16,7 +11,7 @@ export interface ICreateUserResponse {
   updatedAt: Date;
 }
 
-export const documentToRecord = (document: ICreateUserDocument): ICreateUserResponse => {
+export const documentToRecord = (document: IUserDocument): ICreateUserResponse => {
   return {
     _id: document._id.toString(),
     firstName: document.firstName,

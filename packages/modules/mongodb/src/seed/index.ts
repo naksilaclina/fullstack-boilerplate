@@ -74,6 +74,30 @@ async function seedUsers(options: SeedOptions = {}, maxRetries = 5, retryDelay =
         password: testUserPassword,
         role: "user",
         isActive: true,
+        // Adding new fields
+        bio: "This is a test user for development purposes",
+        phone: "+1234567890",
+        dateOfBirth: new Date("1990-01-01"),
+        gender: "prefer-not-to-say",
+        address: {
+          street: "123 Main St",
+          city: "New York",
+          state: "NY",
+          zipCode: "10001",
+          country: "USA"
+        },
+        preferences: {
+          newsletter: true,
+          notifications: {
+            email: true,
+            push: false
+          },
+          theme: "auto",
+          language: "en"
+        },
+        timezone: "America/New_York",
+        locale: "en-US",
+        emailVerified: true
       });
       await testUser.save();
       console.log("Created test user:", testUser.email);
@@ -89,6 +113,30 @@ async function seedUsers(options: SeedOptions = {}, maxRetries = 5, retryDelay =
         password: adminUserPassword,
         role: "admin",
         isActive: true,
+        // Adding new fields
+        bio: "System administrator with full access rights",
+        phone: "+1987654321",
+        dateOfBirth: new Date("1985-05-15"),
+        gender: "other",
+        address: {
+          street: "456 Admin Ave",
+          city: "San Francisco",
+          state: "CA",
+          zipCode: "94102",
+          country: "USA"
+        },
+        preferences: {
+          newsletter: false,
+          notifications: {
+            email: true,
+            push: true
+          },
+          theme: "dark",
+          language: "en"
+        },
+        timezone: "America/Los_Angeles",
+        locale: "en-US",
+        emailVerified: true
       });
       await adminUser.save();
       console.log("Created admin user:", adminUser.email);

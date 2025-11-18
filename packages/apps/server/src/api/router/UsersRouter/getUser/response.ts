@@ -1,10 +1,5 @@
 import { type IUserDocument } from "@naksilaclina/mongodb";
 
-export interface IGetUserDocument extends IUserDocument {
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface IGetUserResponse {
   _id: string;
   firstName: string;
@@ -16,7 +11,7 @@ export interface IGetUserResponse {
   updatedAt: Date;
 }
 
-export const documentToRecord = (document: IGetUserDocument): IGetUserResponse => {
+export const documentToRecord = (document: IUserDocument): IGetUserResponse => {
   return {
     _id: document._id.toString(),
     firstName: document.firstName,

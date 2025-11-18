@@ -85,7 +85,11 @@ const authSlice = createSlice({
         firstName: action.payload.user.firstName,
         lastName: action.payload.user.lastName,
         email: action.payload.user.email,
-        role: action.payload.user.role
+        role: action.payload.user.role,
+        phone: action.payload.user.phone,
+        dateOfBirth: action.payload.user.dateOfBirth,
+        gender: action.payload.user.gender,
+        bio: action.payload.user.bio
       };
       state.isAuthenticated = true;
       state.loading = false;
@@ -125,7 +129,11 @@ const authSlice = createSlice({
           firstName: action.payload.firstName,
           lastName: action.payload.lastName,
           email: action.payload.email,
-          role: action.payload.role
+          role: action.payload.role,
+          phone: action.payload.phone,
+          dateOfBirth: action.payload.dateOfBirth,
+          gender: action.payload.gender,
+          bio: action.payload.bio
         };
         state.isAuthenticated = true;
         state.loading = false;
@@ -168,7 +176,11 @@ const authSlice = createSlice({
           firstName: action.payload.firstName,
           lastName: action.payload.lastName,
           email: action.payload.email,
-          role: action.payload.role
+          role: action.payload.role,
+          phone: action.payload.phone,
+          dateOfBirth: action.payload.dateOfBirth,
+          gender: action.payload.gender,
+          bio: action.payload.bio
         };
         state.isAuthenticated = true;
         state.backgroundValidating = false;

@@ -9,7 +9,6 @@ import { isDevelopment } from "~config";
 import { type ICreateUserParams } from "./params";
 import {
   documentToRecord,
-  type ICreateUserDocument,
   type CreateUserActionResults,
 } from "./response";
 
@@ -86,6 +85,6 @@ export const flow: RouteFlowType<
 
   return {
     status: 201,
-    body: documentToRecord(savedUser as ICreateUserDocument),
+    body: documentToRecord(savedUser),
   };
 };
