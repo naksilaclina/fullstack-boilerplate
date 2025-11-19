@@ -1,5 +1,10 @@
 /* eslint-disable import/first */
-// Environment variables are already loaded by the parent process
+// Load environment variables from root .env file
+const path = require("path");
+const dotenv = require("dotenv");
+const envPath = path.join(__dirname, "../../../../.env");
+console.log("Loading .env from:", envPath);
+dotenv.config({ path: envPath }); // eslint-disable-line
 
 import "../src/moduleAliases";
 import App from "../src/App";

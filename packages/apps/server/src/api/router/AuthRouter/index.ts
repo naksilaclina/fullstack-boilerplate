@@ -6,7 +6,6 @@ import logout from "./logout";
 import refresh from "./refresh";
 import profile from "./profile";
 import sessions from "./sessions";
-import test from "./auth.test.route";
 
 const router = Router();
 
@@ -17,6 +16,5 @@ router.use("/logout", logout);
 router.use("/refresh", refresh);
 router.use("/profile", profile);
 router.use("/sessions", sessions);
-router.use("/test", test);
 
 export default router;
