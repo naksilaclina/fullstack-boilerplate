@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/hooks/auth";
 import { getSessions, revokeSession, revokeAllSessions } from "@/services/auth";
 import { toastService } from "@/services/ui";
+import { AuthGuard } from "@/components";
+import { UserRole } from "@/lib";
 
 interface Session {
   id: string;
@@ -31,13 +33,9 @@ export default function SessionsPage() {
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-
+    // Fetch sessions when component mounts
     fetchSessions();
-  }, [isAuthenticated, router]);
+  }, []);
 
   const fetchSessions = async () => {
     try {
@@ -108,58 +106,60 @@ export default function SessionsPage() {
   }
 
   return (
-    <div className="mx-auto py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Active Sessions</CardTitle>
-          <CardDescription>Manage your active sessions across devices</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold">Your Sessions</h2>
-            <Button
-              onClick={handleRevokeAllSessions}
-              disabled={revokingAll}
-              variant="destructive"
-            >
-              {revokingAll ? "Revoking..." : "Revoke All Other Sessions"}
-            </Button>
-          </div>
+    <AuthGuard allowedRoles={[UserRole.ADMIN]}>
+      <div className="mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Sessions</CardTitle>
+            <CardDescription>Manage your active sessions across devices</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold">Your Sessions</h2>
+              <Button
+                onClick={handleRevokeAllSessions}
+                disabled={revokingAll}
+                variant="destructive"
+              >
+                {revokingAll ? "Revoking..." : "Revoke All Other Sessions"}
+              </Button>
+            </div>
 
-          {sessions.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No active sessions found</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {sessions.map((session) => (
-                <div key={session.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">
-                        {session.userAgent ? session.userAgent.substring(0, 50) + (session.userAgent.length > 50 ? "..." : "") : "Unknown Device"}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        IP: {session.ipAddress || session.geoLocation?.ip || "Unknown"} •
-                        Created: {new Date(session.createdAt).toLocaleString()} •
-                        Expires: {new Date(session.expiresAt).toLocaleString()}
-                      </p>
+            {sessions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No active sessions found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {sessions.map((session) => (
+                  <div key={session.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">
+                          {session.userAgent ? session.userAgent.substring(0, 50) + (session.userAgent.length > 50 ? "..." : "") : "Unknown Device"}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          IP: {session.ipAddress || session.geoLocation?.ip || "Unknown"} •
+                          Created: {new Date(session.createdAt).toLocaleString()} •
+                          Expires: {new Date(session.expiresAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => handleRevokeSession(session.id)}
+                        disabled={revoking === session.id}
+                        variant="destructive"
+                        size="sm"
+                      >
+                        {revoking === session.id ? "Revoking..." : "Revoke"}
+                      </Button>
                     </div>
-                    <Button
-                      onClick={() => handleRevokeSession(session.id)}
-                      disabled={revoking === session.id}
-                      variant="destructive"
-                      size="sm"
-                    >
-                      {revoking === session.id ? "Revoking..." : "Revoke"}
-                    </Button>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </AuthGuard>
   );
 }

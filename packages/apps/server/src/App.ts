@@ -7,9 +7,13 @@ import {
   type Mongoose,
   connect as connectToMongodb,
 } from "@naksilaclina/mongodb";
+import { initAuthModule } from "@naksilaclina/auth";
 import { port, mongodbUri, config } from "./config";
 import { api } from "./api";
 import { securityMiddleware, generalRateLimiter, csrfProtection, monitoringMiddleware, sessionTrackingMiddleware, errorHandler, notFoundHandler } from "./api/middlewares";
+
+// Initialize the auth module with configuration
+initAuthModule(config.auth.jwtSecret, config.auth.jwtRefreshSecret);
 
 export default class App {
   public express: ExpressApp;

@@ -1,22 +1,30 @@
-import jwt from "jsonwebtoken";
+import { sign, verify } from "jsonwebtoken";
 import { SessionModel } from "@naksilaclina/mongodb";
-import { jwtSecret, jwtRefreshSecret } from "../../../config";
-import { isDevelopment } from "~config";
 
-// Validate that secrets are properly configured
-const JWT_SECRET = jwtSecret || (isDevelopment ? 'dev-jwt-secret-change-in-production-32chars' : '');
-const JWT_REFRESH_SECRET = jwtRefreshSecret || (isDevelopment ? 'dev-jwt-refresh-secret-change-in-production-32chars' : '');
+// We'll get these from the centralized config when needed
+let JWT_SECRET: string | null = null;
+let JWT_REFRESH_SECRET: string | null = null;
 
-if (!JWT_SECRET) {
-  const errorMessage = "JWT_SECRET is not configured. Please set it in your environment variables.";
-  console.error(errorMessage);
-  throw new Error(errorMessage);
+// Function to initialize secrets from config
+export function initJwtSecrets(jwtSecret: string, jwtRefreshSecret: string) {
+  JWT_SECRET = jwtSecret;
+  JWT_REFRESH_SECRET = jwtRefreshSecret;
 }
 
-if (!JWT_REFRESH_SECRET) {
-  const errorMessage = "JWT_REFRESH_SECRET is not configured. Please set it in your environment variables.";
-  console.error(errorMessage);
-  throw new Error(errorMessage);
+// Helper function to ensure secrets are initialized
+function ensureSecretsInitialized() {
+  if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
+    // For testing purposes, we can use default values
+    if (process.env.NODE_ENV === 'test') {
+      JWT_SECRET = JWT_SECRET || 'test-jwt-secret-32-chars-long!!';
+      JWT_REFRESH_SECRET = JWT_REFRESH_SECRET || 'test-refresh-secret-32-chars-long!!';
+      return;
+    }
+    
+    const errorMessage = "JWT secrets are not initialized. Please call initJwtSecrets() first.";
+    console.error(errorMessage);
+    throw new Error(errorMessage);
+  }
 }
 
 export interface JwtPayload {
@@ -30,7 +38,8 @@ export interface JwtPayload {
  * Generate access token
  */
 export function generateAccessToken(payload: JwtPayload): string {
-  return jwt.sign(payload, JWT_SECRET, {
+  ensureSecretsInitialized();
+  return sign(payload, JWT_SECRET!, {
     expiresIn: "15m", // Short-lived access token
     issuer: "naksilaclina",
     audience: "naksilaclina-users",
@@ -41,10 +50,12 @@ export function generateAccessToken(payload: JwtPayload): string {
  * Generate refresh token
  */
 export async function generateRefreshToken(userId: string, sessionId?: string): Promise<string> {
+  ensureSecretsInitialized();
+  
   // Use the provided session ID as jti, or generate a random one if not provided
   const jti = sessionId || Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   
-  const token = jwt.sign({ userId, jti }, JWT_REFRESH_SECRET, {
+  const token = sign({ userId, jti }, JWT_REFRESH_SECRET!, {
     expiresIn: "7d", // Longer-lived refresh token
     issuer: "naksilaclina",
     audience: "naksilaclina-users",
@@ -58,7 +69,8 @@ export async function generateRefreshToken(userId: string, sessionId?: string): 
  */
 export function verifyAccessToken(token: string): JwtPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    ensureSecretsInitialized();
+    const decoded = verify(token, JWT_SECRET!, {
       issuer: "naksilaclina",
       audience: "naksilaclina-users",
     }) as JwtPayload;
@@ -74,7 +86,8 @@ export function verifyAccessToken(token: string): JwtPayload | null {
  */
 export async function verifyRefreshToken(token: string): Promise<(JwtPayload & { jti: string }) | null> {
   try {
-    const decoded = jwt.verify(token, JWT_REFRESH_SECRET, {
+    ensureSecretsInitialized();
+    const decoded = verify(token, JWT_REFRESH_SECRET!, {
       issuer: "naksilaclina",
       audience: "naksilaclina-users",
     });

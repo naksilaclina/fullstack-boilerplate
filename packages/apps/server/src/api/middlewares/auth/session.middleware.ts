@@ -35,21 +35,4 @@ export function sessionTrackingMiddleware(req: SessionRequest, res: Response, ne
   next();
 }
 
-/**
- * Optional session validation (doesn't block requests)
- */
-export function sessionValidationMiddleware(req: SessionRequest, res: Response, next: NextFunction) {
-  const sessionId = req.sessionId;
-  
-  if (sessionId) {
-    // Log session activity for monitoring
-    console.log('Session Activity:', {
-      sessionId,
-      method: req.method,
-      path: req.path,
-      timestamp: new Date().toISOString()
-    });
-  }
-
-  next();
-}
+// Removed unused sessionValidationMiddleware function

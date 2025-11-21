@@ -19,6 +19,7 @@ interface NavItemsProps {
   items: {
     name: string;
     link: string;
+    icon?: React.ComponentType<{ className?: string }>;
   }[];
   className?: string;
   onItemClick?: () => void;
@@ -48,7 +49,7 @@ export const Navbar = ({ children, className }: NavbarProps) => {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 100) {
+      if (window.scrollY > 0) {
         setVisible(true);
       } else {
         setVisible(false);
@@ -68,7 +69,7 @@ export const Navbar = ({ children, className }: NavbarProps) => {
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
           ? React.cloneElement(
-              child as React.ReactElement<{ visible?: boolean }>,
+              child as React.ReactElement<{ visible?: boolean }> ,
               { visible },
             )
           : child,
@@ -119,7 +120,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
         <a
           onMouseEnter={() => setHovered(idx)}
           onClick={onItemClick}
-          className="relative px-4 py-2 text-neutral-600 dark:text-neutral-300"
+          className="relative px-4 py-2 text-neutral-600 dark:text-neutral-300 flex items-center gap-2 rounded-full transition-all duration-200 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-gray-100/50 dark:hover:bg-neutral-800/50"
           key={`link-${idx}`}
           href={item.link}
         >
@@ -132,7 +133,8 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
               exit={{ opacity: 0 }}
             />
           )}
-          <span className="relative z-20">{item.name}</span>
+          {item.icon && <item.icon className="w-4 h-4 relative z-10" />}
+          <span className="relative z-10">{item.name}</span>
         </a>
       ))}
     </motion.div>

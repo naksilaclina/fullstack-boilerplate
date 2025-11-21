@@ -92,6 +92,19 @@ export default function AuthGuard({
     }
   }, [isReady, isAuthenticated, allowedRoles, user, router, dispatch, requireAuth]);
 
-  // Always render children - no loading state to prevent hydration errors
+  // Show loading state while auth is initializing
+  // Also show loading state when we're checking authentication but not yet authenticated
+  if (!isReady || (requireAuth && !isAuthenticated && isLoading)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <p className="mt-2">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Render children when auth is ready
   return <>{children}</>;
 }

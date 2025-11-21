@@ -3,7 +3,7 @@ import {
   getUserActiveSessions, 
   invalidateAllUserSessions,
   cleanupExpiredSessions 
-} from "./session.utils";
+} from "../utils";
 
 export interface SessionInfo {
   sessionId: string;

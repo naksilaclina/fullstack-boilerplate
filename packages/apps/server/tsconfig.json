@@ -13,7 +13,9 @@
       "~api/*": ["./src/api/*"],
       "~config": ["./src/config"],
       "@naksilaclina/server-types": ["../server/types.ts"],
-      "@naksilaclina/mongodb": ["../../modules/mongodb/src/index.ts"]
+      "@naksilaclina/mongodb": ["../../modules/mongodb/src/index.ts"],
+      "@naksilaclina/auth": ["../../modules/auth/src/index.ts"],
+      "@naksilaclina/auth/*": ["../../modules/auth/src/*"]
     },
 
     "strict": true,

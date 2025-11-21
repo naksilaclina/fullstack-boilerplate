@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/auth";
 import { logout as logoutService } from "@/services/auth";
 import { toastService } from "@/services/ui";
 import { getPostLogoutRedirectPath } from "@/utils/redirectUtils";
+import { LogOut } from "lucide-react";
 
 interface LogoutButtonProps {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
@@ -58,7 +59,10 @@ export default function LogoutButton({
       className={className}
       onClick={handleLogout}
     >
-      {children}
+      <span className="flex items-center gap-2">
+        <LogOut className="w-4 h-4" />
+        {children}
+      </span>
     </Button>
   );
 }

@@ -2,6 +2,8 @@
 
 import React, { Suspense } from "react";
 import { usePathname } from "next/navigation";
+import { AuthGuard } from "@/components";
+import { UserRole } from "@/lib";
 
 const DashboardLoading = () => {
   return (
@@ -22,8 +24,10 @@ export default function DashboardLayout({
   const pathname = usePathname();
   
   return (
-    <Suspense fallback={<DashboardLoading />}>
-      {children}
-    </Suspense>
+    <AuthGuard allowedRoles={[UserRole.ADMIN]}>
+      <Suspense fallback={<DashboardLoading />}>
+        {children}
+      </Suspense>
+    </AuthGuard>
   );
 }

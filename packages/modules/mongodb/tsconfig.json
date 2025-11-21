@@ -1,25 +1,14 @@
 {
-  "include": ["src/**/*", "bin/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
-
-  "ts-node": {
-    "require": ["tsconfig-paths/register"]
-  },
 
   "compilerOptions": {
     "lib": ["es2022"],
     "module": "commonjs",
     "target": "es2022",
 
-    "outDir": "dist",
-
-    "baseUrl": ".",
-    "rootDir": ".",
-
-    "paths": {
-      "~entities": ["src/entities"],
-      "~entities/*": ["src/entities/*"]
-    },
+    "outDir": "./dist",
+    "rootDir": "./src",
 
     "declaration": true,
     "declarationMap": true,

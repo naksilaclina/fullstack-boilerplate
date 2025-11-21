@@ -6,7 +6,8 @@
   "workspaces": [
     "packages/apps/server",
     "packages/apps/web",
-    "packages/modules/mongodb"
+    "packages/modules/mongodb",
+    "packages/modules/auth"
   ],
   "scripts": {
     "lint": "eslint .",

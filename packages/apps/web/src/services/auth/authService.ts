@@ -1,4 +1,5 @@
 import { apiClient } from '@/utils/apiClient';
+import type { User } from '@/store/types';
 
 interface LoginCredentials {
   email: string;
@@ -14,21 +15,21 @@ interface RegisterData {
   dateOfBirth?: string;
   gender?: string;
   bio?: string;
+  avatar?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+  };
+  timezone?: string;
+  locale?: string;
 }
 
 interface AuthResponse {
   message: string;
-  user: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
-    phone?: string;
-    dateOfBirth?: string;
-    gender?: string;
-    bio?: string;
-  };
+  user: User;
 }
 
 interface Session {

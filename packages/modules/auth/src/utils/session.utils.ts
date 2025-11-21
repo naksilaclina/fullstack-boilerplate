@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import { createHash } from "crypto";
 import { Request } from "express";
 import { SessionModel, ISession } from "@naksilaclina/mongodb";
 
@@ -32,7 +32,7 @@ export function generateDeviceFingerprint(req: Request): string {
   };
 
   const fingerprintString = JSON.stringify(fingerprint);
-  return crypto.createHash('sha256').update(fingerprintString).digest('hex');
+  return createHash('sha256').update(fingerprintString).digest('hex');
 }
 
 /**
@@ -87,7 +87,7 @@ export async function enforceConcurrentSessionLimit(userId: string, maxSessions:
   if (activeSessions.length >= maxSessions) {
     // Invalidate oldest sessions
     const sessionsToInvalidate = activeSessions.slice(maxSessions - 1);
-    const sessionIds = sessionsToInvalidate.map(s => s._id);
+    const sessionIds = sessionsToInvalidate.map((s: ISession) => s._id);
     
     await SessionModel.updateMany(
       { _id: { $in: sessionIds } },
