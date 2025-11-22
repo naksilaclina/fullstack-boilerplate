@@ -1,44 +1,24 @@
 import { Router, Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { compare } from "bcrypt";
-import { UserModel, type IUserDocument } from "@naksilaclina/mongodb";
-import { generateAccessToken, generateRefreshToken, createEnhancedSession } from "~api/services/auth";
+import { UserModel } from "@naksilaclina/mongodb";
+import { generateAccessToken, generateRefreshToken, createEnhancedSession, getClientIP, AUTH_CONSTANTS } from "~api/services/auth";
 import { validateEmail, validatePassword, handleValidationErrors } from "~api/utils/validation.utils";
 import { authRateLimiter } from "~api/middlewares";
 import { v4 as uuidv4 } from "uuid";
+import { isDevelopment, isProduction } from "../../../config";
 
 const router = Router();
-
-// Helper function to get client IP address
-const getClientIP = (req: Request): string => {
-  // Check for various headers that might contain the real client IP
-  const forwarded = req.headers['x-forwarded-for'] as string;
-  const realIP = req.headers['x-real-ip'] as string;
-  
-  if (forwarded) {
-    // x-forwarded-for can contain multiple IPs, take the first one
-    return forwarded.split(',')[0].trim();
-  }
-  
-  if (realIP) {
-    return realIP.trim();
-  }
-  
-  // Fallback to req.ip which should work correctly with trust proxy setting
-  return req.ip;
-};
-
-import { isDevelopment, isProduction } from "../../../config";
 
 // Helper function for conditional logging - reduced verbosity
 const devLog = (message: string, data?: any) => {
   if (isDevelopment) {
     // Only log important events, not every step
-    if (message.includes('Login attempt started') || 
-        message.includes('Login successful') || 
-        message.includes('User not found') || 
-        message.includes('Invalid password') ||
-        message.includes('Account is deactivated')) {
+    if (message.includes('Login attempt started') ||
+      message.includes('Login successful') ||
+      message.includes('User not found') ||
+      message.includes('Invalid password') ||
+      message.includes('Account is deactivated')) {
       console.log(message, data);
     }
   }
@@ -58,7 +38,7 @@ router.post(
   handleValidationErrors,
   async (req: Request, res: Response) => {
     try {
-      devLog("Login attempt started", { 
+      devLog("Login attempt started", {
         email: req.body.email,
         timestamp: new Date().toISOString()
       });
@@ -66,7 +46,7 @@ router.post(
       // Check for validation errors
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        devLog("Validation failed", { 
+        devLog("Validation failed", {
           errors: errors.array(),
           email: req.body.email
         });
@@ -107,14 +87,14 @@ router.post(
       // Create enhanced session record first
       const sessionId = uuidv4();
       const clientIP = getClientIP(req);
-      
+
       const session = await createEnhancedSession({
         userId: user._id.toString(),
         refreshTokenId: sessionId,
         ipAddress: clientIP,
         userAgent: req.get("User-Agent"),
         sessionType: 'web',
-        maxConcurrentSessions: 5
+        maxConcurrentSessions: AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS
       }, req);
 
       // Generate tokens with session ID
@@ -124,7 +104,7 @@ router.post(
         role: user.role,
         sessionId: sessionId
       });
-      
+
       const refreshToken = await generateRefreshToken(user._id.toString(), sessionId);
 
       // Set refresh token in HTTP-only cookie
@@ -132,7 +112,7 @@ router.post(
         httpOnly: true,
         secure: isProduction,
         sameSite: "lax", // Changed from "strict" to "lax" to allow refresh token to be sent on page refresh
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRY,
         path: "/",
       });
 
@@ -141,17 +121,17 @@ router.post(
         httpOnly: true,
         secure: isProduction,
         sameSite: "lax", // Changed from "strict" to "lax" to allow access token to be sent on page refresh
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        maxAge: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRY,
         path: "/",
       });
 
       // Return user data (without tokens, as they're in cookies now)
-      devLog("Login successful", { 
+      devLog("Login successful", {
         email: user.email,
         userId: user._id,
         role: user.role
       });
-      
+
       return res.status(200).json({
         message: "Login successful",
         user: {

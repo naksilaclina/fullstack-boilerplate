@@ -11,6 +11,7 @@ import { initAuthModule } from "@naksilaclina/auth";
 import { port, mongodbUri, config } from "./config";
 import { api } from "./api";
 import { securityMiddleware, generalRateLimiter, csrfProtection, monitoringMiddleware, sessionTrackingMiddleware, errorHandler, notFoundHandler } from "./api/middlewares";
+import { cleanupExpiredSessions } from "./api/services/sessionCleanup.service";
 
 // Initialize the auth module with configuration
 initAuthModule(config.auth.jwtSecret, config.auth.jwtRefreshSecret);
@@ -19,6 +20,7 @@ export default class App {
   public express: ExpressApp;
   public httpServer?: HttpServer;
   public mongoose?: Mongoose;
+  private cleanupInterval?: NodeJS.Timeout;
 
   constructor() {
     this.express = express();
@@ -90,6 +92,14 @@ export default class App {
     try {
       this.mongoose = await connectToMongodb(mongodbUri);
       console.log(`Connected to MongoDB`);
+      
+      // Start periodic session cleanup (runs daily)
+      this.cleanupInterval = setInterval(async () => {
+        await cleanupExpiredSessions();
+      }, 24 * 60 * 60 * 1000); // 24 hours
+      
+      // Run cleanup immediately on startup
+      await cleanupExpiredSessions();
     } catch (error) {
       console.error("Failed to connect to MongoDB:", error);
       process.exit(1);
@@ -112,6 +122,11 @@ export default class App {
   }
 
   async stop() {
+    // Clear the cleanup interval
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+    
     if (this.mongoose) {
       console.log("Disconnecting from MongoDB");
       await this.mongoose?.disconnect();

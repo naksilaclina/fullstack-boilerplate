@@ -1,35 +1,15 @@
 import { Router, Request, Response } from "express";
 import { body, validationResult } from "express-validator";
 import { hash } from "bcrypt";
-import { UserModel, type IUserDocument } from "@naksilaclina/mongodb";
-import { generateAccessToken, generateRefreshToken, createEnhancedSession } from "~api/services/auth";
+import { UserModel } from "@naksilaclina/mongodb";
+import { generateAccessToken, generateRefreshToken, createEnhancedSession, getClientIP, AUTH_CONSTANTS } from "~api/services/auth";
 import { validateEmail, validatePassword, validateName, handleValidationErrors } from "~api/utils/validation.utils";
 import { authRateLimiter } from "~api/middlewares";
 import { v4 as uuidv4 } from "uuid";
+import { isDevelopment, isProduction } from "../../../config";
 
 const router = Router();
 const SALT_ROUNDS = 10;
-
-// Helper function to get client IP address
-const getClientIP = (req: Request): string => {
-  // Check for various headers that might contain the real client IP
-  const forwarded = req.headers['x-forwarded-for'] as string;
-  const realIP = req.headers['x-real-ip'] as string;
-  
-  if (forwarded) {
-    // x-forwarded-for can contain multiple IPs, take the first one
-    return forwarded.split(',')[0].trim();
-  }
-  
-  if (realIP) {
-    return realIP.trim();
-  }
-  
-  // Fallback to req.ip which should work correctly with trust proxy setting
-  return req.ip;
-};
-
-import { isDevelopment, isProduction } from "../../../config";
 
 // Helper function for conditional logging
 const devLog = (...args: any[]) => {
@@ -102,10 +82,10 @@ router.post(
         });
       }
 
-      const { 
-        firstName, 
-        lastName, 
-        email, 
+      const {
+        firstName,
+        lastName,
+        email,
         password,
         phone,
         dateOfBirth,
@@ -155,14 +135,14 @@ router.post(
       // Create enhanced session record first
       const sessionId = uuidv4();
       const clientIP = getClientIP(req);
-      
+
       const session = await createEnhancedSession({
         userId: savedUser._id.toString(),
         refreshTokenId: sessionId,
         ipAddress: clientIP,
         userAgent: req.get("User-Agent"),
         sessionType: 'web',
-        maxConcurrentSessions: 5
+        maxConcurrentSessions: AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS
       }, req);
 
       // Generate tokens with session ID
@@ -179,7 +159,7 @@ router.post(
         httpOnly: true,
         secure: isProduction,
         sameSite: "lax", // Changed from "strict" to "lax" to allow refresh token to be sent on page refresh
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRY,
         path: "/",
       });
 

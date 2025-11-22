@@ -1,0 +1,7 @@
+export const AUTH_CONSTANTS = {
+    ACCESS_TOKEN_EXPIRY: 15 * 60 * 1000, // 15 minutes
+    REFRESH_TOKEN_EXPIRY: 7 * 24 * 60 * 60 * 1000, // 7 days
+    SESSION_EXPIRY: 7 * 24 * 60 * 60 * 1000, // 7 days
+    SESSION_CLEANUP_THRESHOLD: 30 * 24 * 60 * 60 * 1000, // 30 days
+    MAX_CONCURRENT_SESSIONS: 5,
+};

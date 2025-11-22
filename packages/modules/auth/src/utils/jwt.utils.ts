@@ -99,7 +99,7 @@ export async function verifyRefreshToken(token: string): Promise<(JwtPayload & {
     
     const payload = decoded as JwtPayload & { jti: string };
     
-    // Enhanced session validation with retry logic for refresh token rotation
+    // Enhanced session validation with improved retry logic for refresh token rotation
     let session = await SessionModel.findOne({ 
       refreshTokenId: payload.jti,
       userId: payload.userId,
@@ -107,14 +107,22 @@ export async function verifyRefreshToken(token: string): Promise<(JwtPayload & {
     });
     
     // If session doesn't exist, wait a short time and try again (handles refresh token rotation)
+    // Increase retry attempts and use exponential backoff
     if (!session) {
-      // Wait 100ms and try again
-      await new Promise(resolve => setTimeout(resolve, 100));
-      session = await SessionModel.findOne({ 
-        refreshTokenId: payload.jti,
-        userId: payload.userId,
-        expiresAt: { $gt: new Date() }
-      });
+      // Try up to 3 times with increasing delays
+      for (let i = 0; i < 3; i++) {
+        // Exponential backoff: 100ms, 200ms, 400ms
+        await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, i)));
+        session = await SessionModel.findOne({ 
+          refreshTokenId: payload.jti,
+          userId: payload.userId,
+          expiresAt: { $gt: new Date() }
+        });
+        
+        if (session) {
+          break;
+        }
+      }
     }
     
     // If session still doesn't exist, is invalidated, or expired

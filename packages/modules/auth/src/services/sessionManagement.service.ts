@@ -3,7 +3,7 @@ import {
   getUserActiveSessions, 
   invalidateAllUserSessions,
   cleanupExpiredSessions 
-} from "../utils";
+} from "../utils/index";
 
 export interface SessionInfo {
   sessionId: string;
@@ -38,7 +38,7 @@ export class SessionManagementService {
   static async getUserSessions(userId: string): Promise<SessionInfo[]> {
     const sessions = await getUserActiveSessions(userId);
     
-    return sessions.map(session => ({
+    return sessions.map((session: ISession) => ({
       sessionId: session.refreshTokenId,
       deviceFingerprint: session.deviceFingerprint,
       userAgent: session.userAgent,
@@ -54,32 +54,28 @@ export class SessionManagementService {
    * Terminate specific session
    */
   static async terminateSession(userId: string, sessionId: string): Promise<boolean> {
-    const result = await SessionModel.updateOne(
+    const result = await SessionModel.deleteOne(
       { 
         userId, 
-        refreshTokenId: sessionId,
-        invalidatedAt: null 
-      },
-      { invalidatedAt: new Date() }
+        refreshTokenId: sessionId
+      }
     );
 
-    return result.modifiedCount > 0;
+    return result.deletedCount > 0;
   }
 
   /**
    * Terminate all sessions except current
    */
   static async terminateAllOtherSessions(userId: string, currentSessionId: string): Promise<number> {
-    const result = await SessionModel.updateMany(
+    const result = await SessionModel.deleteMany(
       { 
         userId,
-        refreshTokenId: { $ne: currentSessionId },
-        invalidatedAt: null 
-      },
-      { invalidatedAt: new Date() }
+        refreshTokenId: { $ne: currentSessionId }
+      }
     );
 
-    return result.modifiedCount;
+    return result.deletedCount;
   }
 
   /**
@@ -150,20 +146,9 @@ export class SessionManagementService {
    * Force logout user from all devices
    */
   static async forceLogoutUser(userId: string, reason: string = 'Administrative action'): Promise<number> {
-    const result = await SessionModel.updateMany(
+    const result = await SessionModel.deleteMany(
       { 
-        userId,
-        invalidatedAt: null 
-      },
-      { 
-        invalidatedAt: new Date(),
-        $push: {
-          adminActions: {
-            action: 'force_logout',
-            reason,
-            timestamp: new Date()
-          }
-        }
+        userId
       }
     );
 
@@ -171,10 +156,10 @@ export class SessionManagementService {
     console.log('[ADMIN_ACTION] Force logout user:', {
       userId,
       reason,
-      sessionsTerminated: result.modifiedCount,
+      sessionsTerminated: result.deletedCount,
       timestamp: new Date().toISOString()
     });
 
-    return result.modifiedCount;
+    return result.deletedCount;
   }
 }

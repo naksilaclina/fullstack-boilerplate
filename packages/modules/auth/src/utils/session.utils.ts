@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { Request } from "express";
 import { SessionModel, ISession } from "@naksilaclina/mongodb";
+import { AUTH_CONSTANTS } from "../constants";
 
 export interface DeviceFingerprint {
   userAgent: string;
@@ -20,6 +21,27 @@ export interface SessionCreationOptions {
 }
 
 /**
+ * Get client IP address from request
+ */
+export function getClientIP(req: Request): string {
+  // Check for various headers that might contain the real client IP
+  const forwarded = req.headers['x-forwarded-for'] as string;
+  const realIP = req.headers['x-real-ip'] as string;
+
+  if (forwarded) {
+    // x-forwarded-for can contain multiple IPs, take the first one
+    return forwarded.split(',')[0].trim();
+  }
+
+  if (realIP) {
+    return realIP.trim();
+  }
+
+  // Fallback to req.ip which should work correctly with trust proxy setting
+  return req.ip || 'unknown';
+}
+
+/**
  * Generate device fingerprint from request headers
  */
 export function generateDeviceFingerprint(req: Request): string {
@@ -27,8 +49,8 @@ export function generateDeviceFingerprint(req: Request): string {
     userAgent: req.get('User-Agent') || '',
     acceptLanguage: req.get('Accept-Language') || '',
     acceptEncoding: req.get('Accept-Encoding') || '',
-    platform: req.get('Sec-CH-UA-Platform') || '',
-    screenResolution: req.get('X-Screen-Resolution') || '',
+    // Removed X-Screen-Resolution as it's not a standard header and not sent by frontend
+    // Removed Sec-CH-UA-Platform as it requires Client Hints opt-in
   };
 
   const fingerprintString = JSON.stringify(fingerprint);
@@ -42,8 +64,8 @@ export async function getGeoLocation(ip: string): Promise<{ country?: string; ci
   // In production, integrate with a GeoIP service like MaxMind, IPinfo, or similar
   // For now, return a basic structure
   return {
-    country: ip.startsWith('127.') || ip.startsWith('192.168.') ? 'Local' : 'Unknown',
-    city: ip.startsWith('127.') || ip.startsWith('192.168.') ? 'Local' : 'Unknown',
+    country: ip === '::1' || ip.startsWith('127.') || ip.startsWith('192.168.') ? 'Local' : 'Unknown',
+    city: ip === '::1' || ip.startsWith('127.') || ip.startsWith('192.168.') ? 'Local' : 'Unknown',
     ip: ip
   };
 }
@@ -54,10 +76,10 @@ export async function getGeoLocation(ip: string): Promise<{ country?: string; ci
 export async function createEnhancedSession(options: SessionCreationOptions, req: Request): Promise<ISession> {
   const deviceFingerprint = generateDeviceFingerprint(req);
   const geoLocation = await getGeoLocation(options.ipAddress);
-  
+
   // Check for concurrent sessions and clean up if needed
-  await enforceConcurrentSessionLimit(options.userId, options.maxConcurrentSessions || 5);
-  
+  await enforceConcurrentSessionLimit(options.userId, options.maxConcurrentSessions || AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS);
+
   const session = new SessionModel({
     userId: options.userId,
     refreshTokenId: options.refreshTokenId,
@@ -65,10 +87,10 @@ export async function createEnhancedSession(options: SessionCreationOptions, req
     deviceFingerprint,
     lastActivity: new Date(),
     geoLocation,
-    maxConcurrentSessions: options.maxConcurrentSessions || 5,
+    maxConcurrentSessions: options.maxConcurrentSessions || AUTH_CONSTANTS.MAX_CONCURRENT_SESSIONS,
     sessionType: options.sessionType || 'web',
     loginAttempts: 0,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    expiresAt: new Date(Date.now() + AUTH_CONSTANTS.SESSION_EXPIRY),
   });
 
   return await session.save();
@@ -85,13 +107,12 @@ export async function enforceConcurrentSessionLimit(userId: string, maxSessions:
   }).sort({ lastActivity: -1 });
 
   if (activeSessions.length >= maxSessions) {
-    // Invalidate oldest sessions
-    const sessionsToInvalidate = activeSessions.slice(maxSessions - 1);
-    const sessionIds = sessionsToInvalidate.map((s: ISession) => s._id);
-    
-    await SessionModel.updateMany(
-      { _id: { $in: sessionIds } },
-      { invalidatedAt: new Date() }
+    // Delete oldest sessions
+    const sessionsToDelete = activeSessions.slice(maxSessions - 1);
+    const sessionIds = sessionsToDelete.map((s: ISession) => s._id);
+
+    await SessionModel.deleteMany(
+      { _id: { $in: sessionIds } }
     );
   }
 }
@@ -100,9 +121,14 @@ export async function enforceConcurrentSessionLimit(userId: string, maxSessions:
  * Update session activity
  */
 export async function updateSessionActivity(sessionId: string): Promise<void> {
-  await SessionModel.updateOne(
-    { refreshTokenId: sessionId },
-    { 
+  // Use findOneAndUpdate for atomic operation and better performance
+  await SessionModel.findOneAndUpdate(
+    {
+      refreshTokenId: sessionId,
+      invalidatedAt: null,
+      expiresAt: { $gt: new Date() }
+    },
+    {
       lastActivity: new Date(),
       $inc: { loginAttempts: 0 } // Reset login attempts on successful activity
     }
@@ -125,23 +151,22 @@ export async function getUserActiveSessions(userId: string): Promise<ISession[]>
  */
 export async function invalidateAllUserSessions(userId: string, exceptSessionId?: string): Promise<void> {
   const query: any = {
-    userId,
-    invalidatedAt: null
+    userId
   };
 
   if (exceptSessionId) {
     query.refreshTokenId = { $ne: exceptSessionId };
   }
 
-  await SessionModel.updateMany(query, { invalidatedAt: new Date() });
+  await SessionModel.deleteMany(query);
 }
 
 /**
  * Clean up expired and invalidated sessions
  */
 export async function cleanupExpiredSessions(): Promise<void> {
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  
+  const thirtyDaysAgo = new Date(Date.now() - AUTH_CONSTANTS.SESSION_CLEANUP_THRESHOLD);
+
   await SessionModel.deleteMany({
     $or: [
       { expiresAt: { $lt: new Date() } },
