@@ -1,10 +1,8 @@
-import mongoose from "mongoose";
+import { model } from "mongoose";
 import SessionSchema from "./SessionSchema";
 
 // Import the interface directly
 import type { ISession } from "./SessionTypes";
 
-// Create and export the model
-const SessionModel = mongoose.model<ISession>("Session", SessionSchema);
-
-export default SessionModel;
+// Export the model without explicit typing to avoid complex union type issues
+export default model("Session", SessionSchema);

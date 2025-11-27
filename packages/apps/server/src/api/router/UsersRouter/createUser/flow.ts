@@ -85,6 +85,6 @@ export const flow: RouteFlowType<
 
   return {
     status: 201,
-    body: documentToRecord(savedUser),
+    body: documentToRecord(savedUser as any),
   };
 };

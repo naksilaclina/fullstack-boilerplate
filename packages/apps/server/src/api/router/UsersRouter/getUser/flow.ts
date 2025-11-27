@@ -26,6 +26,6 @@ export const flow: RouteFlowType<
 
   return {
     status: StatusCodes.OK,
-    body: documentToRecord(user),
+    body: documentToRecord(user as any),
   };
 };

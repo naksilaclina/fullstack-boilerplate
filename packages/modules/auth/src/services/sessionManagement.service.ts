@@ -93,21 +93,21 @@ export class SessionManagementService {
         userId,
         invalidatedAt: null,
         expiresAt: { $gt: new Date() }
-      }),
+      }) as any,
       SessionModel.countDocuments({
         userId,
         createdAt: { $gte: twentyFourHoursAgo }
-      }),
+      }) as any,
       SessionModel.find({
         userId,
         invalidatedAt: null,
         expiresAt: { $gt: new Date() }
-      }, 'deviceFingerprint geoLocation.country geoLocation.city')
+      }, 'deviceFingerprint geoLocation.country geoLocation.city') as any
     ]);
 
-    const uniqueDevices = new Set(allSessions.map(s => s.deviceFingerprint)).size;
+    const uniqueDevices = new Set(allSessions.map((s: any) => s.deviceFingerprint)).size;
     const uniqueLocations = new Set(
-      allSessions.map(s => `${s.geoLocation.country}-${s.geoLocation.city}`)
+      allSessions.map((s: any) => `${s.geoLocation?.country || 'Unknown'}-${s.geoLocation?.city || 'Unknown'}`)
     ).size;
 
     return {

@@ -93,7 +93,7 @@ export async function createEnhancedSession(options: SessionCreationOptions, req
     expiresAt: new Date(Date.now() + AUTH_CONSTANTS.SESSION_EXPIRY),
   });
 
-  return await session.save();
+  return await session.save() as any;
 }
 
 /**
@@ -109,7 +109,7 @@ export async function enforceConcurrentSessionLimit(userId: string, maxSessions:
   if (activeSessions.length >= maxSessions) {
     // Delete oldest sessions
     const sessionsToDelete = activeSessions.slice(maxSessions - 1);
-    const sessionIds = sessionsToDelete.map((s: ISession) => s._id);
+    const sessionIds = sessionsToDelete.map((s: any) => s._id);
 
     await SessionModel.deleteMany(
       { _id: { $in: sessionIds } }
@@ -138,7 +138,7 @@ export async function updateSessionActivity(sessionId: string): Promise<void> {
 /**
  * Get active sessions for user
  */
-export async function getUserActiveSessions(userId: string): Promise<ISession[]> {
+export async function getUserActiveSessions(userId: string): Promise<any[]> {
   return await SessionModel.find({
     userId,
     invalidatedAt: null,

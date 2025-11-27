@@ -33,13 +33,13 @@ router.get("/", authenticate, async (req: Request, res: Response) => {
     const sessions = await SessionModel.find({ userId }).sort({ createdAt: -1 });
     
     // Return session data without sensitive information
-    const sessionData = sessions.map(session => ({
+    const sessionData = sessions.map((session: any) => ({
       id: session._id,
       createdAt: session.createdAt,
       userAgent: session.userAgent,
-      ipAddress: session.geoLocation.ip,
+      ipAddress: session.geoLocation?.ip || 'Unknown',
       expiresAt: session.expiresAt,
-    }));
+    })) as any;
 
     return res.status(200).json({
       message: "Sessions retrieved successfully",

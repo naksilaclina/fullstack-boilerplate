@@ -80,10 +80,7 @@ const SessionSchema = new Schema(
 
 // Add indexes for common queries
 SessionSchema.index({ userId: 1 });
-SessionSchema.index({ refreshTokenId: 1 });
-SessionSchema.index({ deviceFingerprint: 1 });
 SessionSchema.index({ userId: 1, deviceFingerprint: 1 });
-SessionSchema.index({ lastActivity: 1 });
 
 // Compound index for concurrent session management
 SessionSchema.index({ userId: 1, invalidatedAt: 1, expiresAt: 1 });

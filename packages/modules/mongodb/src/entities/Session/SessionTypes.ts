@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 export interface IGeoLocation {
   country?: string;
@@ -26,5 +26,5 @@ export interface ISession extends Document {
 }
 
 export interface ISessionDocument extends ISession {
-  _id: string;
+  _id: Types.ObjectId;
 }
