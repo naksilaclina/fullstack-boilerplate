@@ -6,6 +6,14 @@ let failedQueue: { resolve: (value: any) => void; reject: (reason?: any) => void
 // Store CSRF token
 let csrfToken: string | null = null;
 
+// Custom error for token refresh failure
+export class TokenRefreshError extends Error {
+  constructor() {
+    super('Token refresh failed');
+    this.name = 'TokenRefreshError';
+  }
+}
+
 /**
  * Fetch CSRF token from the server
  */
@@ -15,7 +23,7 @@ const fetchCsrfToken = async (): Promise<string | null> => {
     const response = await fetch(`${baseUrl.replace('/api/v1', '/api')}/csrf-token`, {
       credentials: "include",
     });
-    
+
     if (response.ok) {
       const data = await response.json();
       csrfToken = data.csrfToken;
@@ -39,7 +47,7 @@ const processQueue = (error: any, token: string | null = null) => {
       resolve(token);
     }
   });
-  
+
   failedQueue = [];
 };
 
@@ -53,7 +61,7 @@ const directRefreshAuth = async (): Promise<boolean> => {
       url: `${baseUrl}/auth/refresh`,
       timestamp: new Date().toISOString()
     });
-    
+
     const response = await fetch(`${baseUrl}/auth/refresh`, {
       method: "POST",
       credentials: "include",
@@ -62,7 +70,7 @@ const directRefreshAuth = async (): Promise<boolean> => {
         ...(csrfToken && { 'CSRF-Token': csrfToken }),
       },
     });
-    
+
     // Log response details
     const responseText = await response.text();
     let responseData;
@@ -71,7 +79,7 @@ const directRefreshAuth = async (): Promise<boolean> => {
     } catch {
       responseData = responseText;
     }
-    
+
     if (!response.ok) {
       console.log('❌ directRefreshAuth: Refresh request failed', {
         status: response.status,
@@ -85,7 +93,7 @@ const directRefreshAuth = async (): Promise<boolean> => {
         responseData
       });
     }
-    
+
     return response.ok;
   } catch (error) {
     console.log('❌ directRefreshAuth: Failed to refresh tokens', error);
@@ -98,18 +106,26 @@ const directRefreshAuth = async (): Promise<boolean> => {
  */
 class ApiClient {
   private baseUrl: string;
-  
+  private onAuthError: (() => void) | null = null;
+
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
-  
+
+  /**
+   * Set a callback to be invoked when authentication fails (e.g. token refresh fails)
+   */
+  setAuthErrorCallback(callback: () => void) {
+    this.onAuthError = callback;
+  }
+
   /**
    * Initialize CSRF protection by fetching the token
    */
   async initCsrfProtection(): Promise<void> {
     await fetchCsrfToken();
   }
-  
+
   /**
    * Make a fetch request with automatic token refresh and CSRF protection
    */
@@ -118,7 +134,7 @@ class ApiClient {
     if (!csrfToken) {
       await fetchCsrfToken();
     }
-    
+
     // Make the initial request
     let response = await fetch(input, {
       ...init,
@@ -128,13 +144,13 @@ class ApiClient {
         ...init?.headers,
       },
     });
-    
+
     // If unauthorized, try to refresh token
     // BUT only if this is NOT a login request, as login failures should not trigger token refresh
     const url = typeof input === 'string' ? input : input.url;
     const isLoginRequest = url.includes('/auth/login');
     const isRefreshRequest = url.includes('/auth/refresh');
-    
+
     if (response.status === 401 && !isLoginRequest && !isRefreshRequest) {
       // If already refreshing, add to queue
       if (isRefreshing) {
@@ -142,13 +158,13 @@ class ApiClient {
           failedQueue.push({ resolve, reject });
         });
       }
-      
+
       isRefreshing = true;
-      
+
       try {
         const refreshed = await directRefreshAuth();
         isRefreshing = false;
-        
+
         if (refreshed) {
           // Retry the original request
           processQueue(null, 'refreshed');
@@ -162,9 +178,16 @@ class ApiClient {
           });
         } else {
           // Refresh failed, clear queue with error
-          processQueue(new Error('Token refresh failed'), null);
+          const error = new TokenRefreshError();
+          processQueue(error, null);
+
+          // Notify about auth failure
+          if (this.onAuthError) {
+            this.onAuthError();
+          }
+
           // Also throw the error to ensure proper handling
-          throw new Error('Token refresh failed');
+          throw error;
         }
       } catch (error) {
         isRefreshing = false;
@@ -172,12 +195,12 @@ class ApiClient {
         throw error;
       }
     }
-    
+
     // If CSRF token is invalid, fetch a new one and retry
     if (response.status === 403 && (await response.text()).includes('CSRF')) {
       console.log('🔄 CSRF token invalid, fetching new token and retrying...');
       await fetchCsrfToken();
-      
+
       // Retry the request with new CSRF token
       response = await fetch(input, {
         ...init,
@@ -188,10 +211,10 @@ class ApiClient {
         },
       });
     }
-    
+
     return response;
   }
-  
+
   /**
    * GET request
    */
@@ -204,7 +227,7 @@ class ApiClient {
       },
     });
   }
-  
+
   /**
    * POST request
    */
@@ -218,7 +241,7 @@ class ApiClient {
       body: data ? JSON.stringify(data) : undefined,
     });
   }
-  
+
   /**
    * PUT request
    */
@@ -232,7 +255,7 @@ class ApiClient {
       body: data ? JSON.stringify(data) : undefined,
     });
   }
-  
+
   /**
    * DELETE request
    */

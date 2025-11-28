@@ -1,6 +1,8 @@
 "use client";
 
 import React, { Suspense } from "react";
+import { AuthGuard } from "@/components";
+import { UserRole } from "@/lib";
 
 const UserLoading = () => {
   return (
@@ -19,8 +21,10 @@ export default function UserLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<UserLoading />}>
-      {children}
-    </Suspense>
+    <AuthGuard allowedRoles={[UserRole.USER]}>
+      <Suspense fallback={<UserLoading />}>
+        {children}
+      </Suspense>
+    </AuthGuard>
   );
 }

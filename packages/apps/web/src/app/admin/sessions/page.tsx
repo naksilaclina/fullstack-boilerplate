@@ -9,6 +9,7 @@ import { getSessions, revokeSession, revokeAllSessions } from "@/services/auth";
 import { toastService } from "@/services/ui";
 import { AuthGuard } from "@/components";
 import { UserRole } from "@/lib";
+import { TokenRefreshError } from "@/utils/apiClient";
 
 interface Session {
   id: string;
@@ -43,6 +44,12 @@ export default function SessionsPage() {
       const response = await getSessions();
       setSessions(response.sessions);
     } catch (error: any) {
+      // Ignore token refresh errors as they are handled by the auth provider/guard
+      // which will redirect to login
+      if (error instanceof TokenRefreshError) {
+        return;
+      }
+
       console.error("Failed to fetch sessions", error);
       toastService.error({
         message: "Error",
@@ -63,6 +70,10 @@ export default function SessionsPage() {
         description: "Session revoked successfully",
       });
     } catch (error: any) {
+      if (error instanceof TokenRefreshError) {
+        return;
+      }
+
       console.error("Failed to revoke session", error);
       toastService.error({
         message: "Error",
@@ -84,6 +95,10 @@ export default function SessionsPage() {
         description: "All other sessions revoked successfully",
       });
     } catch (error: any) {
+      if (error instanceof TokenRefreshError) {
+        return;
+      }
+
       console.error("Failed to revoke all sessions", error);
       toastService.error({
         message: "Error",
