@@ -18,9 +18,8 @@ import { useTheme } from "next-themes";
 import { UserRole } from "@/lib";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAppDispatch } from "@/store";
-import { refreshAuthStatus } from "@/store/authSlice";
 import { Button } from "@/components/ui/button";
+
 // Import icons from lucide-react
 import {
   Home,
@@ -40,27 +39,14 @@ import {
 
 export default function Header() {
   const { isAuthenticated, user, isReady } = useAuth();
-  const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   const isDev = process.env.NODE_ENV === "development";
 
-  // Check auth status periodically to ensure session is still valid
-  useEffect(() => {
-    // Only refresh for authenticated users
-    if (!isReady || !isAuthenticated) {
-      return;
-    }
-
-    // Set up an interval to periodically check auth status
-    const interval = setInterval(() => {
-      dispatch(refreshAuthStatus());
-    }, 5 * 60 * 1000); // Check every 5 minutes
-
-    return () => clearInterval(interval);
-  }, [isReady, isAuthenticated, dispatch]);
+  // Removed periodic auth check to prevent unnecessary load
+  // Auth is now checked globally in ReduxProvider.tsx
 
   // Define navigation items with icons
   const guestNavItems = [
