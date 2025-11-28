@@ -72,7 +72,7 @@ const directRefreshAuth = async (): Promise<boolean> => {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        ...(csrfToken && { 'CSRF-Token': csrfToken }),
+        ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
       },
     });
 
@@ -148,7 +148,7 @@ class ApiClient {
       ...init,
       credentials: "include", // Always include credentials for auth
       headers: {
-        ...(csrfToken && isStateChanging && { 'CSRF-Token': csrfToken }),
+        ...(csrfToken && isStateChanging && { 'X-CSRF-Token': csrfToken }),
         ...init?.headers,
       },
     });
@@ -180,7 +180,7 @@ class ApiClient {
             ...init,
             credentials: "include", // Always include credentials for auth
             headers: {
-              ...(csrfToken && isStateChanging && { 'CSRF-Token': csrfToken }),
+              ...(csrfToken && isStateChanging && { 'X-CSRF-Token': csrfToken }),
               ...init?.headers,
             },
           });
@@ -218,7 +218,7 @@ class ApiClient {
           ...init,
           credentials: "include",
           headers: {
-            ...(csrfToken && isStateChanging && { 'CSRF-Token': csrfToken }),
+            ...(csrfToken && isStateChanging && { 'X-CSRF-Token': csrfToken }),
             ...init?.headers,
           },
         });
