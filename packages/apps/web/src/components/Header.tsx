@@ -44,26 +44,24 @@ export default function Header() {
   const { theme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  
+
   const isDev = process.env.NODE_ENV === "development";
-  
+
   // Check auth status periodically to ensure session is still valid
   useEffect(() => {
-    if (isReady && !isAuthenticated) {
-      // Try to refresh auth status if user appears unauthenticated
-      dispatch(refreshAuthStatus());
+    // Only refresh for authenticated users
+    if (!isReady || !isAuthenticated) {
+      return;
     }
-    
+
     // Set up an interval to periodically check auth status
     const interval = setInterval(() => {
-      if (isReady && isAuthenticated) {
-        dispatch(refreshAuthStatus());
-      }
+      dispatch(refreshAuthStatus());
     }, 5 * 60 * 1000); // Check every 5 minutes
-    
+
     return () => clearInterval(interval);
   }, [isReady, isAuthenticated, dispatch]);
-  
+
   // Define navigation items with icons
   const guestNavItems = [
     { name: "Home", link: "/", icon: Home },
@@ -90,17 +88,17 @@ export default function Header() {
     if (pathname === "/") {
       return guestNavItems;
     }
-    
+
     // Show user navigation when on user pages (for both user and admin roles)
     if (pathname?.startsWith("/user") && isAuthenticated) {
       return userNavItems;
     }
-    
+
     // Show admin navigation when on admin pages (only for admin role)
     if (pathname?.startsWith("/admin") && isAuthenticated && user?.role === UserRole.ADMIN) {
       return adminNavItems;
     }
-    
+
     // Default to guest navigation
     return guestNavItems;
   };
@@ -121,8 +119,8 @@ export default function Header() {
         {/* Desktop Navigation */}
         <NavBody>
           <NavbarLogo />
-          <NavItems 
-            items={navItems} 
+          <NavItems
+            items={navItems}
             onItemClick={() => setIsMobileMenuOpen(false)}
           />
           <div className="flex items-center gap-4">
@@ -136,8 +134,8 @@ export default function Header() {
                     Login
                   </span>
                 </NavbarButton>
-                <NavbarButton 
-                  href="/register" 
+                <NavbarButton
+                  href="/register"
                   variant="primary"
                   className="!bg-black !text-white"
                 >
@@ -159,7 +157,7 @@ export default function Header() {
                       </Button>
                     </Link>
                   )}
-                  
+
                   {/* Switch panel button for users with admin role */}
                   {user?.role === UserRole.ADMIN && pathname?.startsWith("/user") && (
                     <Link href="/admin" passHref>
@@ -169,8 +167,8 @@ export default function Header() {
                       </Button>
                     </Link>
                   )}
-                  
-                  <NavbarButton 
+
+                  <NavbarButton
                     href={getUserDashboardLink()}
                     variant="secondary"
                     className="!px-2 !py-1 !text-sm !font-medium !bg-transparent !shadow-none !border-0 hover:!underline"
@@ -211,7 +209,7 @@ export default function Header() {
                 <span className="block">{item.name}</span>
               </a>
             ))}
-            
+
             {/* Add switch panel buttons for mobile */}
             {isAuthenticated && user?.role === UserRole.ADMIN && (
               <div className="flex flex-col gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
@@ -223,7 +221,7 @@ export default function Header() {
                     </Button>
                   </Link>
                 )}
-                
+
                 {pathname?.startsWith("/user") && (
                   <Link href="/admin" passHref>
                     <Button variant="outline" size="sm" className="w-full flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
@@ -234,7 +232,7 @@ export default function Header() {
                 )}
               </div>
             )}
-            
+
             <div className="flex w-full flex-col gap-4 pt-4">
               <div className="flex justify-center py-2">
                 <ThemeSwitch />
@@ -267,7 +265,7 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  <NavbarButton 
+                  <NavbarButton
                     href={getUserDashboardLink()}
                     onClick={() => setIsMobileMenuOpen(false)}
                     variant="secondary"

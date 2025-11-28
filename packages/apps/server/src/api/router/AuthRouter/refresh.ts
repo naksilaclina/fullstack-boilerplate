@@ -164,9 +164,6 @@ router.post("/", async (req: Request, res: Response) => {
     // Find and delete the existing session
     await SessionModel.deleteOne({ refreshTokenId: decoded.jti });
 
-    // Invalidate the old refresh token (rotation)
-    await invalidateRefreshToken(decoded.jti);
-
     // Create new session record
     const sessionId = uuidv4();
     const clientIP = getClientIP(req);

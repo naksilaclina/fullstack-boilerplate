@@ -31,59 +31,43 @@ export default class App {
     this.express.use(cookieParser());
     // Get CORS origins from centralized config
     const corsOrigins = config.security.corsOrigins;
-      
+
     this.express.use(cors({
       origin: corsOrigins,
       credentials: true,
     }));
-    
+
     // Add monitoring middleware first (for request tracking)
     this.express.use(monitoringMiddleware({
       logRequests: config.nodeEnv === 'development',
       performanceTracking: true
     }));
-    
+
     // Add session tracking
     this.express.use(sessionTrackingMiddleware);
-    
+
     // Session security features are now handled in the authenticate middleware
-    
+
     // Apply security middleware
     this.express.use(securityMiddleware);
     this.express.use(generalRateLimiter);
-    
-    // Apply CSRF protection to API routes, excluding authentication routes
-    this.express.use('/api/v1/auth/login', (req, res, next) => {
-      // Skip CSRF for login
-      next();
-    });
-    this.express.use('/api/v1/auth/register', (req, res, next) => {
-      // Skip CSRF for registration
-      next();
-    });
-    this.express.use('/api/v1/auth/refresh', (req, res, next) => {
-      // Skip CSRF for token refresh
-      next();
-    });
-    this.express.use('/api/csrf-token', (req, res, next) => {
-      // Skip CSRF for token endpoint
-      next();
-    });
-    // Apply CSRF protection to all other API routes
+
+    // Apply CSRF protection to all API routes
+    // Note: csurf ignores GET/HEAD/OPTIONS requests by default, so /api/csrf-token is safe
     this.express.use('/api', csrfProtection);
-    
+
     // Route to provide CSRF token to frontend
     this.express.get('/api/csrf-token', (req: Request, res: Response) => {
       res.json({ csrfToken: (req as any).csrfToken() });
     });
-    
+
     console.log("Mounting API routes at /api/v1");
     this.express.use("/api/v1", api);
     console.log("API routes mounted");
-    
+
     // Add 404 handler for undefined routes
     this.express.use(notFoundHandler);
-    
+
     // Add global error handler (must be last)
     this.express.use(errorHandler);
   }
@@ -92,12 +76,12 @@ export default class App {
     try {
       this.mongoose = await connectToMongodb(mongodbUri);
       console.log(`Connected to MongoDB`);
-      
+
       // Start periodic session cleanup (runs daily)
       this.cleanupInterval = setInterval(async () => {
         await cleanupExpiredSessions();
       }, 24 * 60 * 60 * 1000); // 24 hours
-      
+
       // Run cleanup immediately on startup
       await cleanupExpiredSessions();
     } catch (error) {
@@ -126,7 +110,7 @@ export default class App {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
     }
-    
+
     if (this.mongoose) {
       console.log("Disconnecting from MongoDB");
       await this.mongoose?.disconnect();

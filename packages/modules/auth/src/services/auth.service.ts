@@ -6,6 +6,7 @@ import {
   JwtPayload
 } from "../utils";
 import { Request } from "express";
+import { randomBytes } from "crypto";
 
 /**
  * Generate authentication tokens and create session
@@ -16,8 +17,8 @@ export async function generateAuthTokens(
   role: string,
   req: Request
 ) {
-  // Generate session ID
-  const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  // Generate secure session ID
+  const sessionId = randomBytes(32).toString('hex');
   
   // Create JWT payload
   const payload: JwtPayload = {
@@ -63,8 +64,8 @@ export async function refreshAuthTokens(
   // Invalidate old refresh token
   await invalidateRefreshToken(oldSessionId);
   
-  // Generate new session ID
-  const newSessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  // Generate new secure session ID
+  const newSessionId = randomBytes(32).toString('hex');
   
   // Create new JWT payload
   const payload: JwtPayload = {

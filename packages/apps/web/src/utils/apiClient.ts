@@ -62,6 +62,11 @@ const directRefreshAuth = async (): Promise<boolean> => {
       timestamp: new Date().toISOString()
     });
 
+    // Ensure we have CSRF token before refresh
+    if (!csrfToken) {
+      await fetchCsrfToken();
+    }
+
     const response = await fetch(`${baseUrl}/auth/refresh`, {
       method: "POST",
       credentials: "include",
@@ -130,8 +135,11 @@ class ApiClient {
    * Make a fetch request with automatic token refresh and CSRF protection
    */
   async fetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
-    // Ensure we have a CSRF token
-    if (!csrfToken) {
+    // Ensure we have a CSRF token for state-changing requests
+    const method = init?.method?.toUpperCase() || 'GET';
+    const isStateChanging = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method);
+
+    if (isStateChanging && !csrfToken) {
       await fetchCsrfToken();
     }
 
@@ -140,7 +148,7 @@ class ApiClient {
       ...init,
       credentials: "include", // Always include credentials for auth
       headers: {
-        ...(csrfToken && { 'CSRF-Token': csrfToken }),
+        ...(csrfToken && isStateChanging && { 'CSRF-Token': csrfToken }),
         ...init?.headers,
       },
     });
@@ -172,7 +180,7 @@ class ApiClient {
             ...init,
             credentials: "include", // Always include credentials for auth
             headers: {
-              ...(csrfToken && { 'CSRF-Token': csrfToken }),
+              ...(csrfToken && isStateChanging && { 'CSRF-Token': csrfToken }),
               ...init?.headers,
             },
           });
@@ -197,19 +205,24 @@ class ApiClient {
     }
 
     // If CSRF token is invalid, fetch a new one and retry
-    if (response.status === 403 && (await response.text()).includes('CSRF')) {
-      console.log('🔄 CSRF token invalid, fetching new token and retrying...');
-      await fetchCsrfToken();
+    if (response.status === 403) {
+      const responseClone = response.clone();
+      const responseText = await responseClone.text();
 
-      // Retry the request with new CSRF token
-      response = await fetch(input, {
-        ...init,
-        credentials: "include",
-        headers: {
-          ...(csrfToken && { 'CSRF-Token': csrfToken }),
-          ...init?.headers,
-        },
-      });
+      if (responseText.includes('CSRF') || responseText.includes('csrf')) {
+        console.log('🔄 CSRF token invalid, fetching new token and retrying...');
+        await fetchCsrfToken();
+
+        // Retry the request with new CSRF token
+        response = await fetch(input, {
+          ...init,
+          credentials: "include",
+          headers: {
+            ...(csrfToken && isStateChanging && { 'CSRF-Token': csrfToken }),
+            ...init?.headers,
+          },
+        });
+      }
     }
 
     return response;

@@ -21,15 +21,13 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     // Get the refresh token from cookies
     const refreshToken = req.cookies.refreshToken;
-    
+
     // If refresh token exists, delete the session from database
     if (refreshToken) {
       const decoded = await verifyRefreshToken(refreshToken);
       if (decoded) {
         // Delete the session from database completely
         await SessionModel.deleteOne({ refreshTokenId: decoded.jti });
-        // Also invalidate the refresh token to prevent any reuse
-        await invalidateRefreshToken(decoded.jti);
       }
     }
 
