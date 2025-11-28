@@ -1,5 +1,6 @@
 import { sign, verify } from "jsonwebtoken";
 import { SessionModel } from "@naksilaclina/mongodb";
+import { randomUUID } from "crypto";
 
 // We'll get these from the centralized config when needed
 let JWT_SECRET: string | null = null;
@@ -53,7 +54,7 @@ export async function generateRefreshToken(userId: string, sessionId?: string): 
   ensureSecretsInitialized();
   
   // Use the provided session ID as jti, or generate a random one if not provided
-  const jti = sessionId || Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const jti = sessionId || randomUUID();
   
   const token = sign({ userId, jti }, JWT_REFRESH_SECRET!, {
     expiresIn: "7d", // Longer-lived refresh token
